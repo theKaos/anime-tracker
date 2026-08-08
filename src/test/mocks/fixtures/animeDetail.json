@@ -1,0 +1,40 @@
+{
+  "id": 1,
+  "title": { "romaji": "Shingeki no Kyojin", "english": "Attack on Titan", "native": "進撃の巨人" },
+  "coverImage": { "large": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/1.jpg" },
+  "bannerImage": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/1.jpg",
+  "format": "TV",
+  "episodes": 25,
+  "duration": 24,
+  "seasonYear": 2013,
+  "season": "SPRING",
+  "genres": ["Action", "Drama"],
+  "averageScore": 85,
+  "popularity": 500000,
+  "status": "FINISHED",
+  "studios": { "nodes": [{ "name": "Wit Studio" }] },
+  "description": "<p>Humanity fights back.</p><script>alert(1)</script>",
+  "relations": {
+    "edges": [
+      {
+        "relationType": "SEQUEL",
+        "node": {
+          "id": 4,
+          "title": { "romaji": "Shingeki no Kyojin Season 2", "english": "Attack on Titan Season 2", "native": "進撃の巨人2" },
+          "coverImage": { "large": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/4.jpg" },
+          "bannerImage": null,
+          "format": "TV",
+          "episodes": 12,
+          "duration": 24,
+          "seasonYear": 2017,
+          "season": "SPRING",
+          "genres": ["Action", "Drama"],
+          "averageScore": 87,
+          "popularity": 300000,
+          "status": "FINISHED",
+          "studios": { "nodes": [{ "name": "Wit Studio" }] }
+        }
+      }
+    ]
+  }
+}
