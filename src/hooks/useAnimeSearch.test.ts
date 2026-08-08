@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
 import { useAnimeSearch } from './useAnimeSearch'
 import { DEFAULT_FILTERS } from '@/lib/utils/searchParams'
 import type { Anime } from '@/types/anime'
+import * as anilistClient from '@/lib/anilist/client'
 
 const initialAnime: Anime[] = [
   {
@@ -49,5 +50,31 @@ describe('useAnimeSearch', () => {
     rerender({ initial: secondPage })
 
     expect(result.current.anime).toEqual(secondPage)
+  })
+
+  it('recovers from a failed loadMore instead of getting stuck loading forever', async () => {
+    const spy = vi.spyOn(anilistClient, 'fetchAnimeList').mockRejectedValueOnce(new Error('network down'))
+
+    const { result } = renderHook(() => useAnimeSearch(initialAnime, true, DEFAULT_FILTERS))
+
+    await act(async () => {
+      await result.current.loadMore()
+    })
+
+    // The failed request must not leave isLoading stuck true.
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.error).toBeTruthy()
+    expect(result.current.anime).toHaveLength(1)
+
+    // A subsequent call must not be blocked by the earlier failure.
+    await act(async () => {
+      await result.current.loadMore()
+    })
+
+    expect(spy).toHaveBeenCalledTimes(2)
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.anime.length).toBeGreaterThan(1)
+
+    spy.mockRestore()
   })
 })

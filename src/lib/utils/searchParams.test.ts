@@ -20,6 +20,21 @@ describe('parseSearchParams', () => {
       page: 1,
     })
   })
+
+  it('falls back to null for an invalid season value', () => {
+    const params = new URLSearchParams('season=BOGUS')
+    expect(parseSearchParams(params).season).toBeNull()
+  })
+
+  it('falls back to null for an invalid format value', () => {
+    const params = new URLSearchParams('format=BOGUS')
+    expect(parseSearchParams(params).format).toBeNull()
+  })
+
+  it('falls back to the default sort for an invalid sort value', () => {
+    const params = new URLSearchParams('sort=BOGUS')
+    expect(parseSearchParams(params).sort).toBe(DEFAULT_FILTERS.sort)
+  })
 })
 
 describe('filtersToSearchParams', () => {

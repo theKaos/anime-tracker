@@ -20,7 +20,11 @@ export function SearchExperience({
   filters: SearchFilters
 }) {
   const router = useRouter()
-  const { anime, hasNextPage, loadMore } = useAnimeSearch(initialAnime, initialHasNextPage, filters)
+  const { anime, hasNextPage, isLoading, loadMore } = useAnimeSearch(
+    initialAnime,
+    initialHasNextPage,
+    filters
+  )
 
   function updateFilters(next: SearchFilters) {
     const params = filtersToSearchParams(next)
@@ -32,7 +36,7 @@ export function SearchExperience({
       <SearchBar defaultValue={filters.search} onSearch={(search) => updateFilters({ ...filters, search })} />
       <FilterPanel filters={filters} onChange={updateFilters} />
       <AnimeGrid anime={anime} />
-      <InfiniteScrollTrigger onIntersect={loadMore} disabled={!hasNextPage} />
+      <InfiniteScrollTrigger onIntersect={loadMore} disabled={!hasNextPage} isLoading={isLoading} />
     </div>
   )
 }

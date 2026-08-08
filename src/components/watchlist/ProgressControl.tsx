@@ -27,7 +27,7 @@ export function ProgressControl({
         value={progress}
         min={0}
         max={totalEpisodes ?? undefined}
-        onChange={(event) => onChange(Math.max(0, Number(event.target.value)))}
+        onChange={(event) => onChange(Math.min(max, Math.max(0, Number(event.target.value))))}
         className="w-14 rounded-card border border-border bg-surface px-2 py-1 text-center text-text"
         aria-label="Episoden-Fortschritt"
       />

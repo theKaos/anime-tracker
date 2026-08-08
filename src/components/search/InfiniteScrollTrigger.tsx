@@ -6,9 +6,11 @@ import { Spinner } from '@/components/ui/Spinner'
 export function InfiniteScrollTrigger({
   onIntersect,
   disabled,
+  isLoading = false,
 }: {
   onIntersect: () => void
   disabled: boolean
+  isLoading?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -31,7 +33,7 @@ export function InfiniteScrollTrigger({
 
   return (
     <div ref={ref} className="flex justify-center py-6">
-      <Spinner />
+      {isLoading ? <Spinner /> : <div className="h-6 w-6" aria-hidden="true" />}
     </div>
   )
 }

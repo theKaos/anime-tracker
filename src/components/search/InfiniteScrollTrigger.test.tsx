@@ -26,4 +26,18 @@ describe('InfiniteScrollTrigger', () => {
     const { container } = render(<InfiniteScrollTrigger onIntersect={vi.fn()} disabled />)
     expect(container).toBeEmptyDOMElement()
   })
+
+  it('does not show the spinner when not actively loading', () => {
+    const { queryByRole } = render(
+      <InfiniteScrollTrigger onIntersect={vi.fn()} disabled={false} isLoading={false} />
+    )
+    expect(queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('shows the spinner while loading', () => {
+    const { getByRole } = render(
+      <InfiniteScrollTrigger onIntersect={vi.fn()} disabled={false} isLoading />
+    )
+    expect(getByRole('status')).toBeInTheDocument()
+  })
 })

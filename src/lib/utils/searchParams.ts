@@ -1,5 +1,6 @@
-import type { SearchFilters } from '@/types/filters'
-import type { MediaFormat, MediaSeason } from '@/types/anime'
+import type { SearchFilters, SortOption } from '@/types/filters'
+import { SEASONS } from '@/constants/seasons'
+import { FORMATS } from '@/constants/formats'
 
 export const DEFAULT_FILTERS: SearchFilters = {
   search: '',
@@ -11,16 +12,37 @@ export const DEFAULT_FILTERS: SearchFilters = {
   page: 1,
 }
 
+const VALID_SEASONS: Set<string> = new Set(SEASONS.map((season) => season.value))
+const VALID_FORMATS: Set<string> = new Set(FORMATS.map((format) => format.value))
+const VALID_SORTS: Set<string> = new Set<SortOption>([
+  'TRENDING_DESC',
+  'POPULARITY_DESC',
+  'SCORE_DESC',
+  'START_DATE_DESC',
+])
+
+function parseSeason(value: string | null): SearchFilters['season'] {
+  return value && VALID_SEASONS.has(value) ? (value as SearchFilters['season']) : null
+}
+
+function parseFormat(value: string | null): SearchFilters['format'] {
+  return value && VALID_FORMATS.has(value) ? (value as SearchFilters['format']) : null
+}
+
+function parseSort(value: string | null): SortOption {
+  return value && VALID_SORTS.has(value) ? (value as SortOption) : DEFAULT_FILTERS.sort
+}
+
 export function parseSearchParams(params: URLSearchParams): SearchFilters {
   const year = params.get('year')
   const genres = params.get('genres')
   return {
     search: params.get('search') ?? DEFAULT_FILTERS.search,
     year: year ? Number(year) : null,
-    season: (params.get('season') as MediaSeason | null) ?? null,
-    format: (params.get('format') as MediaFormat | null) ?? null,
+    season: parseSeason(params.get('season')),
+    format: parseFormat(params.get('format')),
     genres: genres ? genres.split(',').filter(Boolean) : [],
-    sort: (params.get('sort') as SearchFilters['sort']) ?? DEFAULT_FILTERS.sort,
+    sort: parseSort(params.get('sort')),
     page: 1,
   }
 }

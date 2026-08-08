@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/Input'
 import { useDebounce } from '@/hooks/useDebounce'
 import { DEBOUNCE_MS } from '@/constants/config'
@@ -14,8 +14,13 @@ export function SearchBar({
 }) {
   const [value, setValue] = useState(defaultValue)
   const debounced = useDebounce(value, DEBOUNCE_MS)
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     onSearch(debounced)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced])

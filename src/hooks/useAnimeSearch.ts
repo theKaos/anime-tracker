@@ -14,23 +14,34 @@ export function useAnimeSearch(
   const [hasNextPage, setHasNextPage] = useState(initialHasNextPage)
   const [page, setPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setAnime(initialAnime)
     setHasNextPage(initialHasNextPage)
     setPage(1)
+    setError(null)
   }, [initialAnime, initialHasNextPage])
 
   async function loadMore() {
     if (isLoading || !hasNextPage) return
     setIsLoading(true)
+    setError(null)
     const nextPage = page + 1
-    const result = await fetchAnimeList({ ...filters, page: nextPage })
-    setAnime((current) => [...current, ...result.anime])
-    setHasNextPage(result.hasNextPage)
-    setPage(nextPage)
-    setIsLoading(false)
+    try {
+      const result = await fetchAnimeList({ ...filters, page: nextPage })
+      setAnime((current) => [...current, ...result.anime])
+      setHasNextPage(result.hasNextPage)
+      setPage(nextPage)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load more anime.'
+      setError(message)
+      // Deliberately leave hasNextPage/page untouched so the user (or the
+      // infinite-scroll observer) can retry the same page again.
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  return { anime, hasNextPage, isLoading, loadMore }
+  return { anime, hasNextPage, isLoading, error, loadMore }
 }

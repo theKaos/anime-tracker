@@ -18,4 +18,17 @@ describe('SearchBar', () => {
     expect(onSearch).toHaveBeenLastCalledWith('bocchi')
     vi.useRealTimers()
   })
+
+  it('does not call onSearch on initial mount', () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const onSearch = vi.fn()
+    render(<SearchBar defaultValue="bocchi" onSearch={onSearch} />)
+
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+
+    expect(onSearch).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
 })
