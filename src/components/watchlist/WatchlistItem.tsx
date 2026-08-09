@@ -21,10 +21,10 @@ export function WatchlistItem({ entry }: { entry: WatchlistEntry }) {
         <Image src={entry.snapshot.coverImage} alt={title} fill className="object-cover" />
       </Link>
       <div className="flex-1 space-y-2">
-        <Link href={`/anime/${entry.animeId}`} className="text-ui font-semibold text-text">
+        <div className="text-ui font-semibold text-text">
           {title}
-        </Link>
-        <div className="flex flex-wrap items-center gap-3">
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
           <StatusSelect value={entry.status} onChange={(status) => setStatus(entry.animeId, status)} />
           <ProgressControl
             progress={entry.progress}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import { renderWithProviders } from '@/test/utils/renderWithProviders'
 import { AnimeGrid } from './AnimeGrid'
 import type { Anime } from '@/types/anime'
 
@@ -23,12 +24,12 @@ const anime: Anime = {
 
 describe('AnimeGrid', () => {
   it('renders a card per anime', () => {
-    render(<AnimeGrid anime={[anime, { ...anime, id: 2, title: { ...anime.title, romaji: 'Second' } }]} />)
+    renderWithProviders(<AnimeGrid anime={[anime, { ...anime, id: 2, title: { ...anime.title, romaji: 'Second' } }]} />)
     expect(screen.getAllByRole('link')).toHaveLength(2)
   })
 
   it('shows an empty state when there are no results', () => {
-    render(<AnimeGrid anime={[]} />)
+    renderWithProviders(<AnimeGrid anime={[]} />)
     expect(screen.getByText('Keine Ergebnisse gefunden.')).toBeInTheDocument()
   })
 })

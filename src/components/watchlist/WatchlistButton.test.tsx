@@ -27,9 +27,9 @@ describe('WatchlistButton', () => {
   it('adds and then removes the anime from the watchlist', async () => {
     renderWithProviders(<WatchlistButton anime={anime} />)
 
-    const addButton = await screen.findByRole('button', { name: 'Zur Watchlist hinzufügen' })
+    const addButton = await screen.findByRole('button', { name: 'hinzufügen' })
     await userEvent.click(addButton)
 
-    expect(await screen.findByRole('button', { name: 'Von Watchlist entfernen' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'entfernen' })).toBeInTheDocument()
   })
 })

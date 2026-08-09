@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProgressControl } from './ProgressControl'
 
@@ -24,19 +24,22 @@ describe('ProgressControl', () => {
     expect(screen.getByRole('button', { name: 'Episode vor' })).toBeDisabled()
   })
 
-  it('clamps a typed input value to totalEpisodes', () => {
-    const onChange = vi.fn()
-    render(<ProgressControl progress={2} totalEpisodes={12} onChange={onChange} />)
-    const input = screen.getByLabelText('Episoden-Fortschritt')
-    fireEvent.change(input, { target: { value: '999' } })
-    expect(onChange).toHaveBeenLastCalledWith(12)
+  it('shows the progress as a non-editable span, not an input', () => {
+    render(<ProgressControl progress={3} totalEpisodes={12} onChange={vi.fn()} />)
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Episoden-Fortschritt')).toHaveTextContent('3 / 12')
   })
 
-  it('clamps a typed input value to zero', () => {
-    const onChange = vi.fn()
-    render(<ProgressControl progress={2} totalEpisodes={12} onChange={onChange} />)
-    const input = screen.getByLabelText('Episoden-Fortschritt')
-    fireEvent.change(input, { target: { value: '-5' } })
-    expect(onChange).toHaveBeenLastCalledWith(0)
+  it('renders a progress bar reflecting progress/totalEpisodes when total is known', () => {
+    render(<ProgressControl progress={3} totalEpisodes={12} onChange={vi.fn()} />)
+    const bar = screen.getByRole('progressbar')
+    expect(bar).toHaveAttribute('aria-valuenow', '3')
+    expect(bar).toHaveAttribute('aria-valuemax', '12')
+  })
+
+  it('does not render a progress bar when totalEpisodes is unknown', () => {
+    render(<ProgressControl progress={3} totalEpisodes={null} onChange={vi.fn()} />)
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
   })
 })
