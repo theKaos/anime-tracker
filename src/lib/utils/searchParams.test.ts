@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_FILTERS, filtersToSearchParams, parseSearchParams } from './searchParams'
+import {
+  DEFAULT_FILTERS,
+  filtersToSearchParams,
+  parseSearchParams,
+  parseSearchParamsFromRecord,
+  removeFilter,
+} from './searchParams'
 
 describe('parseSearchParams', () => {
   it('returns defaults for empty params', () => {
@@ -37,6 +43,14 @@ describe('parseSearchParams', () => {
   })
 })
 
+describe('parseSearchParamsFromRecord', () => {
+  it('parses string values and ignores array/undefined values', () => {
+    const result = parseSearchParamsFromRecord({ search: 'bocchi', year: '2022', genres: undefined })
+    expect(result.search).toBe('bocchi')
+    expect(result.year).toBe(2022)
+  })
+})
+
 describe('filtersToSearchParams', () => {
   it('omits default values', () => {
     expect(filtersToSearchParams(DEFAULT_FILTERS).toString()).toBe('')
@@ -52,5 +66,22 @@ describe('filtersToSearchParams', () => {
     expect(params.get('search')).toBe('bocchi')
     expect(params.get('year')).toBe('2022')
     expect(params.get('genres')).toBe('Comedy')
+  })
+})
+
+describe('removeFilter', () => {
+  it('removes only the given genre, keeping others', () => {
+    const filters = { ...DEFAULT_FILTERS, genres: ['Action', 'Drama'] }
+    expect(removeFilter(filters, 'genres', 'Action').genres).toEqual(['Drama'])
+  })
+
+  it('clears the search text', () => {
+    const filters = { ...DEFAULT_FILTERS, search: 'bocchi' }
+    expect(removeFilter(filters, 'search').search).toBe('')
+  })
+
+  it('nulls out a single-value filter like year', () => {
+    const filters = { ...DEFAULT_FILTERS, year: 2022 }
+    expect(removeFilter(filters, 'year').year).toBeNull()
   })
 })

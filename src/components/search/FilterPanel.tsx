@@ -1,4 +1,5 @@
 import type { SearchFilters } from '@/types/filters'
+import { removeFilter } from '@/lib/utils/searchParams'
 import { YearFilter } from './YearFilter'
 import { SeasonFilter } from './SeasonFilter'
 import { FormatFilter } from './FormatFilter'
@@ -22,18 +23,7 @@ export function FilterPanel({
         <SortSelect value={filters.sort} onChange={(sort) => onChange({ ...filters, sort })} />
       </div>
       <GenreFilter value={filters.genres} onChange={(genres) => onChange({ ...filters, genres })} />
-      <ActiveFilterChips
-        filters={filters}
-        onRemove={(key, value) => {
-          if (key === 'genres' && value) {
-            onChange({ ...filters, genres: filters.genres.filter((g) => g !== value) })
-          } else if (key === 'search') {
-            onChange({ ...filters, search: '' })
-          } else {
-            onChange({ ...filters, [key]: null })
-          }
-        }}
-      />
+      <ActiveFilterChips filters={filters} onRemove={(key, value) => onChange(removeFilter(filters, key, value))} />
     </div>
   )
 }

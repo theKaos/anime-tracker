@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { ThemeToggle } from './ThemeToggle'
 
 export function Header() {
   return (
@@ -11,8 +10,8 @@ export function Header() {
         <nav className="flex items-center gap-6 font-mono text-meta uppercase tracking-wide text-text-muted">
           <Link href="/">Home</Link>
           <Link href="/watchlist">Watchlist</Link>
+          <Link href="/settings">Einstellungen</Link>
         </nav>
-        <ThemeToggle />
       </div>
     </header>
   )

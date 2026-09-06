@@ -1,4 +1,4 @@
-import { Select } from '@/components/ui/Select'
+import { OptionSelect } from '@/components/ui/OptionSelect'
 import type { WatchlistSortOption } from '@/lib/watchlist/sort'
 
 const SORT_OPTIONS: { value: WatchlistSortOption; label: string }[] = [
@@ -15,16 +15,11 @@ export function WatchlistSortSelect({
   onChange: (sort: WatchlistSortOption) => void
 }) {
   return (
-    <Select
-      aria-label="Watchlist sortieren"
+    <OptionSelect
+      ariaLabel="Watchlist sortieren"
       value={value}
-      onChange={(event) => onChange(event.target.value as WatchlistSortOption)}
-    >
-      {SORT_OPTIONS.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </Select>
+      onChange={(next) => onChange(next as WatchlistSortOption)}
+      options={SORT_OPTIONS}
+    />
   )
 }

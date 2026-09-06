@@ -11,6 +11,7 @@ const entry: WatchlistEntry = {
   totalEpisodes: 12,
   addedAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
+  deletedAt: null,
   snapshot: { title: { romaji: 'Test', english: 'Test English', native: 'テスト' }, coverImage: '/cover.jpg', format: 'TV' },
 }
 

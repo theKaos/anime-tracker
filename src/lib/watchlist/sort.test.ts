@@ -1,21 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { sortWatchlistEntries } from './sort'
+import { filterWatchlistEntries, sortWatchlistEntries } from './sort'
 import type { WatchlistEntry } from '@/types/watchlist'
 
-function makeEntry(overrides: Partial<WatchlistEntry> & { title: string; progress: number }): WatchlistEntry {
+function makeEntry({
+  title,
+  progress,
+  ...rest
+}: Partial<WatchlistEntry> & { title: string; progress: number }): WatchlistEntry {
   return {
-    animeId: overrides.progress,
+    animeId: progress,
     status: 'WATCHING',
-    progress: overrides.progress,
+    progress,
     totalEpisodes: 24,
     addedAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    deletedAt: null,
     snapshot: {
-      title: { romaji: overrides.title, english: null, native: overrides.title },
+      title: { romaji: title, english: null, native: title },
       coverImage: '/cover.jpg',
       format: 'TV',
     },
-    ...overrides,
+    ...rest,
   }
 }
 
@@ -45,5 +50,25 @@ describe('sortWatchlistEntries', () => {
     const original = [...entries]
     sortWatchlistEntries(entries, 'TITLE_ASC')
     expect(entries).toEqual(original)
+  })
+})
+
+describe('filterWatchlistEntries', () => {
+  it('returns all entries for ALL', () => {
+    expect(filterWatchlistEntries(entries, 'ALL')).toEqual(entries)
+  })
+
+  it('returns only entries matching the given status', () => {
+    const mixed = [...entries, { ...entries[0], animeId: 99, status: 'COMPLETED' as const }]
+    expect(filterWatchlistEntries(mixed, 'COMPLETED')).toEqual([mixed[3]])
+  })
+
+  it('never shows tombstones, not even for ALL', () => {
+    const withTombstone = [
+      ...entries,
+      { ...entries[0], animeId: 99, deletedAt: '2026-02-01T00:00:00.000Z' },
+    ]
+    expect(filterWatchlistEntries(withTombstone, 'ALL')).toEqual(entries)
+    expect(filterWatchlistEntries(withTombstone, 'WATCHING')).toEqual(entries)
   })
 })

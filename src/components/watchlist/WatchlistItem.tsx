@@ -3,14 +3,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { WatchlistEntry } from '@/types/watchlist'
-import { useWatchlist } from '@/hooks/useWatchlist'
+import { useWatchlistStore } from '@/store/watchlistStore'
 import { StatusSelect } from './StatusSelect'
 import { ProgressControl } from './ProgressControl'
 import { Button } from '@/components/ui/Button'
+import { displayTitle } from '@/lib/utils/format'
 
 export function WatchlistItem({ entry }: { entry: WatchlistEntry }) {
-  const { setStatus, setProgress, removeFromWatchlist } = useWatchlist()
-  const title = entry.snapshot.title.english ?? entry.snapshot.title.romaji
+  const { setStatus, setProgress, removeFromWatchlist } = useWatchlistStore()
+  const title = displayTitle(entry.snapshot.title)
 
   return (
     <div className="flex items-center gap-4 rounded-card bg-surface p-3 shadow-lift">

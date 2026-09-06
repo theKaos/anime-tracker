@@ -2,11 +2,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Anime } from '@/types/anime'
 import { Badge } from '@/components/ui/Badge'
-import { formatScore, formatSeasonYear } from '@/lib/utils/format'
+import { GenreList } from './GenreList'
+import { displayTitle, formatScore, formatSeasonYear } from '@/lib/utils/format'
 import { WatchlistButton } from '@/components/watchlist/WatchlistButton'
 
 export function AnimeCard({ anime }: { anime: Anime }) {
-  const title = anime.title.english ?? anime.title.romaji
+  const title = displayTitle(anime.title)
 
   return (
     <div
@@ -30,15 +31,7 @@ export function AnimeCard({ anime }: { anime: Anime }) {
             {anime.status && (
               <p className="font-mono text-meta uppercase tracking-wide text-white/70">{anime.status}</p>
             )}
-            {anime.genres.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {anime.genres.slice(0, 4).map((genre) => (
-                  <Badge key={genre} variant="secondary">
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
-            )}
+            <GenreList genres={anime.genres} limit={4} />
           </div>
         </div>
         <div className="space-y-1 p-3">

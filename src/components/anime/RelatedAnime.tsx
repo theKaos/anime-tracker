@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Anime } from '@/types/anime'
+import { displayTitle } from '@/lib/utils/format'
 
 export function RelatedAnime({ relations }: { relations: Anime[] }) {
   if (relations.length === 0) return null
@@ -10,7 +11,7 @@ export function RelatedAnime({ relations }: { relations: Anime[] }) {
       <h2 className="text-lead font-semibold text-text">Verwandte Anime</h2>
       <div className="flex gap-4 overflow-x-auto pb-2">
         {relations.map((anime) => {
-          const title = anime.title.english ?? anime.title.romaji
+          const title = displayTitle(anime.title)
           return (
             <Link
               key={anime.id}

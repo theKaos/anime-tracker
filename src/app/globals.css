@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
@@ -17,25 +15,17 @@
   --color-primary: #F0531C;
   --color-secondary: #12B5A6;
   --color-secondary-ink: #0E7C72;
-  --color-bg: #F7F7F5;
-  --color-surface: #FFFFFF;
-  --color-text: #17161A;
-  --color-text-muted: #17161A99;
-  --color-border: #17161A14;
+  --color-bg: #17161A;
+  --color-surface: #1F1E22;
+  --color-text: #ECEEEF;
+  --color-text-muted: #ECEEEF99;
+  --color-border: #FFFFFF1f;
 
   --radius-image: 4px;
   --radius-card: 7px;
   --radius-panel: 11px;
 
   --shadow-lift: 0 2px 4px #17161a12, 0 24px 44px -26px #17161a80;
-}
-
-.dark {
-  --color-bg: #17161A;
-  --color-surface: #1F1E22;
-  --color-text: #ECEEEF;
-  --color-text-muted: #ECEEEF99;
-  --color-border: #FFFFFF1f;
 }
 
 @media (prefers-reduced-motion: reduce) {

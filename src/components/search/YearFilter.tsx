@@ -1,7 +1,10 @@
-import { Select } from '@/components/ui/Select'
+import { OptionSelect } from '@/components/ui/OptionSelect'
 
 const CURRENT_YEAR = new Date().getFullYear()
-const YEARS = Array.from({ length: 50 }, (_, i) => CURRENT_YEAR + 1 - i)
+const YEAR_OPTIONS = Array.from({ length: 50 }, (_, i) => {
+  const year = CURRENT_YEAR + 1 - i
+  return { value: String(year), label: String(year) }
+})
 
 export function YearFilter({
   value,
@@ -11,17 +14,12 @@ export function YearFilter({
   onChange: (year: number | null) => void
 }) {
   return (
-    <Select
-      aria-label="Erscheinungsjahr"
-      value={value ?? ''}
-      onChange={(event) => onChange(event.target.value ? Number(event.target.value) : null)}
-    >
-      <option value="">Jahr</option>
-      {YEARS.map((year) => (
-        <option key={year} value={year}>
-          {year}
-        </option>
-      ))}
-    </Select>
+    <OptionSelect
+      ariaLabel="Erscheinungsjahr"
+      placeholder="Jahr"
+      value={value ? String(value) : ''}
+      onChange={(next) => onChange(next ? Number(next) : null)}
+      options={YEAR_OPTIONS}
+    />
   )
 }

@@ -7,5 +7,6 @@ describe('Header', () => {
     render(<Header />)
     expect(screen.getByRole('link', { name: /anime tracker/i })).toHaveAttribute('href', '/')
     expect(screen.getByRole('link', { name: 'Watchlist' })).toHaveAttribute('href', '/watchlist')
+    expect(screen.getByRole('link', { name: 'Einstellungen' })).toHaveAttribute('href', '/settings')
   })
 })

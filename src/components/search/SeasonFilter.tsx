@@ -1,4 +1,4 @@
-import { Select } from '@/components/ui/Select'
+import { OptionSelect } from '@/components/ui/OptionSelect'
 import { SEASONS } from '@/constants/seasons'
 import type { MediaSeason } from '@/types/anime'
 
@@ -10,17 +10,12 @@ export function SeasonFilter({
   onChange: (season: MediaSeason | null) => void
 }) {
   return (
-    <Select
-      aria-label="Season"
+    <OptionSelect
+      ariaLabel="Season"
+      placeholder="Season"
       value={value ?? ''}
-      onChange={(event) => onChange((event.target.value || null) as MediaSeason | null)}
-    >
-      <option value="">Season</option>
-      {SEASONS.map((season) => (
-        <option key={season.value} value={season.value}>
-          {season.label}
-        </option>
-      ))}
-    </Select>
+      onChange={(next) => onChange((next || null) as MediaSeason | null)}
+      options={SEASONS}
+    />
   )
 }

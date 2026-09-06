@@ -1,8 +1,9 @@
 import Image from 'next/image'
 import type { Anime } from '@/types/anime'
+import { displayTitle } from '@/lib/utils/format'
 
 export function AnimeDetailHeader({ anime }: { anime: Anime }) {
-  const title = anime.title.english ?? anime.title.romaji
+  const title = displayTitle(anime.title)
 
   return (
     <div className="overflow-hidden rounded-panel bg-surface shadow-lift">

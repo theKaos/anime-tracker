@@ -1,7 +1,6 @@
 import type { SearchFilters } from '@/types/filters'
+import type { FilterKey } from '@/lib/utils/searchParams'
 import { Badge } from '@/components/ui/Badge'
-
-type FilterKey = 'search' | 'year' | 'season' | 'format' | 'genres'
 
 export function ActiveFilterChips({
   filters,

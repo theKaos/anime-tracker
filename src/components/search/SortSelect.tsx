@@ -1,4 +1,4 @@
-import { Select } from '@/components/ui/Select'
+import { OptionSelect } from '@/components/ui/OptionSelect'
 import type { SortOption } from '@/types/filters'
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -16,12 +16,11 @@ export function SortSelect({
   onChange: (sort: SortOption) => void
 }) {
   return (
-    <Select aria-label="Sortierung" value={value} onChange={(event) => onChange(event.target.value as SortOption)}>
-      {SORT_OPTIONS.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </Select>
+    <OptionSelect
+      ariaLabel="Sortierung"
+      value={value}
+      onChange={(next) => onChange(next as SortOption)}
+      options={SORT_OPTIONS}
+    />
   )
 }

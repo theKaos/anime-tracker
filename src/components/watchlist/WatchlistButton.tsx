@@ -2,10 +2,10 @@
 
 import type { Anime } from '@/types/anime'
 import { Button } from '@/components/ui/Button'
-import { useWatchlist } from '@/hooks/useWatchlist'
+import { useWatchlistStore } from '@/store/watchlistStore'
 
 export function WatchlistButton({ anime, className }: { anime: Anime; className?: string }) {
-  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist()
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlistStore()
   const inWatchlist = isInWatchlist(anime.id)
 
   return (

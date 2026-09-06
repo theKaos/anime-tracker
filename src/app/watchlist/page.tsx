@@ -1,20 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { useWatchlist } from '@/hooks/useWatchlist'
+import { useWatchlistStore } from '@/store/watchlistStore'
 import { WatchlistFilterTabs } from '@/components/watchlist/WatchlistFilterTabs'
 import { WatchlistItem } from '@/components/watchlist/WatchlistItem'
 import { WatchlistSortSelect } from '@/components/watchlist/WatchlistSortSelect'
-import { sortWatchlistEntries, type WatchlistSortOption } from '@/lib/watchlist/sort'
+import { filterWatchlistEntries, sortWatchlistEntries, type WatchlistSortOption } from '@/lib/watchlist/sort'
 import type { WatchStatus } from '@/types/watchlist'
 
 export default function WatchlistPage() {
-  const { entries } = useWatchlist()
+  const { entries } = useWatchlistStore()
   const [filter, setFilter] = useState<WatchStatus | 'ALL'>('ALL')
   const [sort, setSort] = useState<WatchlistSortOption>('TITLE_ASC')
 
-  const filtered = filter === 'ALL' ? entries : entries.filter((entry) => entry.status === filter)
-  const sorted = sortWatchlistEntries(filtered, sort)
+  const sorted = sortWatchlistEntries(filterWatchlistEntries(entries, filter), sort)
 
   return (
     <div className="space-y-6">

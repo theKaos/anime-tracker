@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Anime } from '@/types/anime'
 import type { SearchFilters } from '@/types/filters'
 import { fetchAnimeList } from '@/lib/anilist/client'
@@ -23,7 +23,7 @@ export function useAnimeSearch(
     setError(null)
   }, [initialAnime, initialHasNextPage])
 
-  async function loadMore() {
+  const loadMore = useCallback(async () => {
     if (isLoading || !hasNextPage) return
     setIsLoading(true)
     setError(null)
@@ -41,7 +41,7 @@ export function useAnimeSearch(
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [isLoading, hasNextPage, page, filters])
 
   return { anime, hasNextPage, isLoading, error, loadMore }
 }

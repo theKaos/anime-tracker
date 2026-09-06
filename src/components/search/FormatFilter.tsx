@@ -1,4 +1,4 @@
-import { Select } from '@/components/ui/Select'
+import { OptionSelect } from '@/components/ui/OptionSelect'
 import { FORMATS } from '@/constants/formats'
 import type { MediaFormat } from '@/types/anime'
 
@@ -10,17 +10,12 @@ export function FormatFilter({
   onChange: (format: MediaFormat | null) => void
 }) {
   return (
-    <Select
-      aria-label="Format"
+    <OptionSelect
+      ariaLabel="Format"
+      placeholder="Format"
       value={value ?? ''}
-      onChange={(event) => onChange((event.target.value || null) as MediaFormat | null)}
-    >
-      <option value="">Format</option>
-      {FORMATS.map((format) => (
-        <option key={format.value} value={format.value}>
-          {format.label}
-        </option>
-      ))}
-    </Select>
+      onChange={(next) => onChange((next || null) as MediaFormat | null)}
+      options={FORMATS}
+    />
   )
 }
