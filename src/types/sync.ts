@@ -21,6 +21,8 @@ export interface MergeResult {
 }
 
 export type ValidationErrorCode =
+  /** Datei ist 0 Byte groß oder enthält nur Leerraum — kein Fehler, nur noch nichts drin. */
+  | 'empty'
   | 'not-json'
   | 'not-an-object'
   | 'wrong-app'

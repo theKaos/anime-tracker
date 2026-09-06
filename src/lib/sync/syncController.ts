@@ -65,7 +65,6 @@ export function createSyncController(deps: SyncControllerDeps): SyncController {
   let running: Promise<void> | null = null
   let rerunRequested = false
   let disposed = false
-  let lastWritten: string | null = null
 
   function emit(patch: Partial<SyncState>) {
     state = { ...state, ...patch }
@@ -98,7 +97,13 @@ export function createSyncController(deps: SyncControllerDeps): SyncController {
     let entries: WatchlistEntry[]
     let stats: MergeStats | null = null
 
-    if (incoming) {
+    // Eine über den Dateidialog neu angelegte Datei ist 0 Byte groß. Sie zu parsen
+    // scheitert — und weil der Controller bei einem Parse-Fehler nicht schreibt,
+    // bliebe sie für immer leer und der Fehler wiederholte sich bei jedem Versuch.
+    // Eine leere Datei ist deshalb kein Fehler, sondern eine noch nicht befüllte.
+    const hasContent = incoming !== null && incoming.text.trim() !== ''
+
+    if (hasContent) {
       const outcome = applyImport(local, incoming.text, now())
       if (!outcome.ok) {
         emit({ status, error: outcome.error.message })
@@ -111,18 +116,19 @@ export function createSyncController(deps: SyncControllerDeps): SyncController {
     }
 
     const json = toJson(entries, now())
-    // Vergleich ohne den Zeitstempel: sonst schriebe jeder Abgleich eine neue
-    // Datei und der Cloud-Client synchronisierte ohne Anlass.
-    const fileChanged = stripExportedAt(json) !== (lastWritten && stripExportedAt(lastWritten))
+    // Verglichen wird gegen das, was gerade wirklich in der Datei steht — nicht
+    // gegen das, was dieses Gerät zuletzt geschrieben zu haben glaubt. Sonst
+    // repariert der Abgleich eine extern geleerte oder überschriebene Datei nie.
+    // Ohne den Zeitstempel, sonst schriebe jeder Abgleich neu und der
+    // Cloud-Client synchronisierte ohne Anlass.
+    const fileChanged =
+      incoming === null || stripExportedAt(json) !== stripExportedAt(incoming.text)
 
     // Nur schreiben, wenn sich wirklich etwas geändert hat. Sonst löst dieser
     // Aufruf über das Store-Abo den nächsten Abgleich aus — und der den nächsten.
     if (!sameEntries(local, entries)) setEntries(entries)
 
-    if (fileChanged) {
-      await port.write(json)
-      lastWritten = json
-    }
+    if (fileChanged) await port.write(json)
 
     emit({ status: 'connected', error: null, lastSyncedAt: now().toISOString() })
     if (stats && onMerged && (stats.added || stats.updated || stats.removed)) onMerged(stats)
@@ -195,7 +201,6 @@ export function createSyncController(deps: SyncControllerDeps): SyncController {
     async disconnect() {
       if (timer) clearTimeout(timer)
       timer = null
-      lastWritten = null
       await port.disconnect()
       emit({ status: 'disconnected', lastSyncedAt: null, error: null })
     },

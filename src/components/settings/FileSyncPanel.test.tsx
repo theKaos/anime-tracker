@@ -137,3 +137,28 @@ describe('FileSyncPanel', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/neueren Version/)
   })
 })
+
+describe('FileSyncPanel — leere Datei', () => {
+  it('says the file is empty instead of blaming the JSON', async () => {
+    setWatchlistEntries([makeEntry({ animeId: 1 })])
+    render(<FileSyncPanel />)
+
+    await userEvent.upload(screen.getByLabelText('Watchlist-Datei auswählen'), jsonFile(''))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Die Datei ist leer/)
+  })
+
+  it('accepts a file saved with a byte order mark', async () => {
+    setWatchlistEntries([])
+    render(<FileSyncPanel />)
+
+    const incoming = [makeEntry({ animeId: 5, updatedAt: '2026-08-20T00:00:00.000Z' })]
+    await userEvent.upload(
+      screen.getByLabelText('Watchlist-Datei auswählen'),
+      jsonFile('﻿' + toJson(incoming))
+    )
+
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+    expect(getWatchlistEntries().map((entry) => entry.animeId)).toEqual([5])
+  })
+})

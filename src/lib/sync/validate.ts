@@ -57,9 +57,20 @@ function parseEntry(value: unknown): WatchlistEntry | null {
  * statt einer Exception: Jeder Fehlerfall braucht in der UI eine eigene Erklärung.
  */
 export function parseWatchlistFile(text: string): ParseResult {
+  // Ein UTF-8-BOM lässt JSON.parse scheitern, obwohl der Inhalt gültig ist.
+  // Windows-Editoren schreiben ihn gern mit.
+  const content = text.replace(/^﻿/, '').trim()
+
+  if (content === '') {
+    return {
+      ok: false,
+      error: { code: 'empty', message: 'Die Datei ist leer — es gibt nichts zu importieren.' },
+    }
+  }
+
   let raw: unknown
   try {
-    raw = JSON.parse(text)
+    raw = JSON.parse(content)
   } catch {
     return {
       ok: false,

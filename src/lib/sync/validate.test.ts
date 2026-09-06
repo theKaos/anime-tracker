@@ -78,3 +78,22 @@ describe('parseWatchlistFile', () => {
     if (result.ok) expect(result.file.entries[0].deletedAt).toBe('2026-02-01T00:00:00.000Z')
   })
 })
+
+describe('parseWatchlistFile — Sonderfälle aus dem echten Betrieb', () => {
+  it('reports an empty file as empty, not as broken JSON', () => {
+    // Eine über showSaveFilePicker neu angelegte Datei ist 0 Byte groß.
+    expect(parseWatchlistFile('')).toMatchObject({ ok: false, error: { code: 'empty' } })
+  })
+
+  it('treats a whitespace-only file as empty too', () => {
+    expect(parseWatchlistFile('\n\r\n  \t')).toMatchObject({ ok: false, error: { code: 'empty' } })
+  })
+
+  it('survives a UTF-8 byte order mark', () => {
+    // Windows-Editoren schreiben JSON gern mit BOM; JSON.parse wirft darüber.
+    const result = parseWatchlistFile('﻿' + toJson([entry]))
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.file.entries).toEqual([entry])
+  })
+})

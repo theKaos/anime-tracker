@@ -295,3 +295,74 @@ describe('createSyncController', () => {
     })
   })
 })
+
+describe('a freshly created, still empty file', () => {
+  // showSaveFilePicker legt beim Anlegen einer neuen Datei eine 0-Byte-Datei an.
+  // Sie zu lesen ergibt "" — und JSON.parse("") wirft. Ohne Sonderbehandlung
+  // scheitert der erste Abgleich, schreibt deshalb nie, und die Datei bleibt
+  // für immer leer: der Fehler wiederholt sich bei jedem Versuch.
+  it('initialises an empty file instead of failing', async () => {
+    const port = createMemorySyncPort({ status: 'connected', file: '' })
+    const { controller, lastState } = setup({ entries: [makeEntry({ animeId: 1 })], port })
+
+    await controller.syncNow()
+
+    expect(lastState().error).toBeNull()
+    expect(entriesInFile(port).map((entry) => entry.animeId)).toEqual([1])
+  })
+
+  it('treats a whitespace-only file the same way', async () => {
+    const port = createMemorySyncPort({ status: 'connected', file: '\n  \r\n' })
+    const { controller, lastState } = setup({ entries: [makeEntry({ animeId: 1 })], port })
+
+    await controller.syncNow()
+
+    expect(lastState().error).toBeNull()
+    expect(entriesInFile(port)).toHaveLength(1)
+  })
+
+  it('recovers on the next sync after the file was emptied externally', async () => {
+    const port = createMemorySyncPort({ status: 'connected', file: '' })
+    const { controller } = setup({ entries: [makeEntry({ animeId: 1 })], port })
+
+    await controller.syncNow()
+    port.file = ''
+    await controller.syncNow()
+
+    expect(entriesInFile(port)).toHaveLength(1)
+  })
+})
+
+describe('the file is the truth, not what this device remembers writing', () => {
+  it('repairs a file that was emptied behind the app\'s back', async () => {
+    const port = createMemorySyncPort({ status: 'connected', file: '' })
+    const { controller } = setup({ entries: [makeEntry({ animeId: 1 })], port })
+
+    await controller.syncNow()
+    port.file = '' // Dropbox-Panne, Editor-Unfall, was auch immer
+    await controller.syncNow()
+
+    expect(entriesInFile(port)).toHaveLength(1)
+  })
+
+  it('rewrites the file when someone replaced its content', async () => {
+    const port = createMemorySyncPort({ status: 'connected' })
+    const { controller } = setup({ entries: [makeEntry({ animeId: 1 })], port })
+
+    await controller.syncNow()
+    port.file = toJson([])
+    await controller.syncNow()
+
+    expect(entriesInFile(port)).toHaveLength(1)
+  })
+
+  it('still skips the write when the file already matches', async () => {
+    const { controller, port } = setup({ entries: [makeEntry({ animeId: 1 })] })
+
+    await controller.syncNow()
+    await controller.syncNow()
+    await controller.syncNow()
+
+    expect(port.writes).toHaveLength(1)
+  })
+})
