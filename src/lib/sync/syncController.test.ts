@@ -179,7 +179,7 @@ describe('createSyncController', () => {
       const port = createMemorySyncPort({ status: 'disconnected' })
       const { controller } = setup({ entries: [makeEntry({ animeId: 1 })], port })
 
-      await controller.connect()
+      await controller.connect('open')
 
       expect(port.writes).toHaveLength(1)
     })
@@ -189,7 +189,7 @@ describe('createSyncController', () => {
       port.connect = vi.fn(async () => 'cancelled' as const)
       const { controller, lastState } = setup({ port })
 
-      await controller.connect()
+      await controller.connect('open')
 
       expect(port.write).not.toHaveBeenCalled()
       expect(lastState().error).toBeNull()
@@ -364,5 +364,55 @@ describe('the file is the truth, not what this device remembers writing', () => 
     await controller.syncNow()
 
     expect(port.writes).toHaveLength(1)
+  })
+})
+
+describe('connect mode — der Android-Fall', () => {
+  // Auf Android führt showSaveFilePicker über ACTION_CREATE_DOCUMENT. Tippt man dort
+  // eine vorhandene Datei an, überschreibt Dropbox sie nicht, sondern legt ein neues
+  // Dokument mit selbst vergebenem Namen an. Nur showOpenFilePicker verbindet mit der
+  // Datei, die der Nutzer wirklich gemeint hat.
+  it('passes the open mode through to the port', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    const { controller } = setup({ port })
+
+    await controller.connect('open')
+
+    expect(port.connect).toHaveBeenCalledWith('open')
+    expect(port.connectedWith).toBe('open')
+  })
+
+  it('passes the create mode through to the port', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    const { controller } = setup({ port })
+
+    await controller.connect('create')
+
+    expect(port.connectedWith).toBe('create')
+  })
+
+  it('merges the existing file instead of overwriting it when opening', async () => {
+    const remote = [makeEntry({ animeId: 42, updatedAt: '2026-08-20T00:00:00.000Z' })]
+    const port = createMemorySyncPort({ status: 'disconnected', file: toJson(remote) })
+    const { controller, getEntries } = setup({
+      entries: [makeEntry({ animeId: 1, updatedAt: '2026-08-01T00:00:00.000Z' })],
+      port,
+    })
+
+    await controller.connect('open')
+
+    expect(getEntries().map((entry) => entry.animeId)).toEqual([1, 42])
+  })
+
+  it('lands in needs-permission when write access was refused', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    port.connect = vi.fn(async () => 'permission-denied' as const)
+    const { controller, lastState } = setup({ port })
+
+    await controller.connect('open')
+
+    expect(lastState().status).toBe('needs-permission')
+    expect(lastState().error).toMatch(/Schreibrecht/)
+    expect(port.write).not.toHaveBeenCalled()
   })
 })

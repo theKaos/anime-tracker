@@ -30,7 +30,9 @@ export function AutoSyncPanel() {
           <p className="text-ui text-text-muted">
             Verbinde eine Datei in deinem Dropbox-Ordner. Die App schreibt Änderungen
             hinein und liest sie beim Öffnen wieder ein — dein anderes Gerät braucht nur
-            dieselbe Datei.
+            dieselbe Datei. Hat ein Gerät die Datei schon angelegt, wähle sie auf allen
+            weiteren Geräten über <strong className="text-text">Vorhandene Datei
+            auswählen</strong> aus.
           </p>
         ) : (
           <p className="text-ui text-text-muted">
@@ -44,11 +46,31 @@ export function AutoSyncPanel() {
         <>
           <div className="flex flex-wrap items-center gap-3">
             {state.status === 'disconnected' && (
-              <Button onClick={() => void sync.connect()}>Watchlist-Datei verbinden</Button>
+              <>
+                {/*
+                  Zwei getrennte Wege, weil die beiden Dateidialoge des Browsers
+                  Unterschiedliches tun. Der Speichern-Dialog legt an — auf Android
+                  erzeugt ein Cloud-Anbieter dabei eine neue Datei mit eigenem Namen,
+                  selbst wenn man eine vorhandene antippt.
+                */}
+                <Button onClick={() => void sync.connect('open')}>
+                  Vorhandene Datei auswählen
+                </Button>
+                {sync.canCreate && (
+                  <Button variant="ghost" onClick={() => void sync.connect('create')}>
+                    Neue Datei anlegen
+                  </Button>
+                )}
+              </>
             )}
 
             {state.status === 'needs-permission' && (
-              <Button onClick={() => void sync.grantPermission()}>Zugriff bestätigen</Button>
+              <>
+                <Button onClick={() => void sync.grantPermission()}>Zugriff bestätigen</Button>
+                <Button variant="ghost" onClick={() => void sync.disconnect()}>
+                  Andere Datei wählen
+                </Button>
+              </>
             )}
 
             {state.status === 'connected' && (

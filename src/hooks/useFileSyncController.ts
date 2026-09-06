@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MergeStats } from '@/types/sync'
-import type { SyncPort } from '@/lib/sync/syncPort'
+import type { ConnectMode, SyncPort } from '@/lib/sync/syncPort'
 import type { SyncController, SyncState } from '@/lib/sync/syncController'
 import { createSyncController } from '@/lib/sync/syncController'
 import { createFsaPort } from '@/lib/sync/fsaAdapter'
@@ -13,7 +13,9 @@ export interface FileSyncApi {
   /** Ergebnis des letzten automatischen Abgleichs, bis es bestätigt wurde. */
   mergeStats: MergeStats | null
   dismissMergeStats: () => void
-  connect: () => Promise<void>
+  connect: (mode: ConnectMode) => Promise<void>
+  /** Ob dieser Browser überhaupt eine neue Datei anlegen kann. */
+  canCreate: boolean
   disconnect: () => Promise<void>
   grantPermission: () => Promise<void>
   syncNow: () => Promise<void>
@@ -71,8 +73,8 @@ export function useFileSyncController(portOverride?: SyncPort): FileSyncApi {
     }
   }, [port])
 
-  const connect = useCallback(async () => {
-    await controllerRef.current?.connect()
+  const connect = useCallback(async (mode: ConnectMode) => {
+    await controllerRef.current?.connect(mode)
   }, [])
 
   const disconnect = useCallback(async () => {
@@ -89,5 +91,14 @@ export function useFileSyncController(portOverride?: SyncPort): FileSyncApi {
 
   const dismissMergeStats = useCallback(() => setMergeStats(null), [])
 
-  return { state, mergeStats, dismissMergeStats, connect, disconnect, grantPermission, syncNow }
+  return {
+    state,
+    mergeStats,
+    dismissMergeStats,
+    connect,
+    canCreate: port.canCreate(),
+    disconnect,
+    grantPermission,
+    syncNow,
+  }
 }

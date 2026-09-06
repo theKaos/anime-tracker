@@ -1,6 +1,6 @@
 import type { WatchlistEntry } from '@/types/watchlist'
 import type { MergeStats } from '@/types/sync'
-import type { PortStatus, SyncPort } from './syncPort'
+import type { ConnectMode, PortStatus, SyncPort } from './syncPort'
 import { toJson } from './serialize'
 import { applyImport } from './applyImport'
 import { purgeTombstones } from './tombstones'
@@ -27,7 +27,7 @@ export interface SyncControllerDeps {
 export interface SyncController {
   getState: () => SyncState
   refreshStatus: () => Promise<void>
-  connect: () => Promise<void>
+  connect: (mode: ConnectMode) => Promise<void>
   disconnect: () => Promise<void>
   grantPermission: () => Promise<void>
   syncNow: () => Promise<void>
@@ -186,11 +186,19 @@ export function createSyncController(deps: SyncControllerDeps): SyncController {
       emit({ status: await readStatus() })
     },
 
-    async connect() {
+    async connect(mode: ConnectMode) {
       emit({ error: null })
       try {
-        const result = await port.connect()
+        const result = await port.connect(mode)
         if (result === 'cancelled') return
+        if (result === 'permission-denied') {
+          emit({
+            status: 'needs-permission',
+            error:
+              'Ohne Schreibrecht auf die Datei kann die Watchlist nicht abgeglichen werden.',
+          })
+          return
+        }
         emit({ status: 'connected' })
         await enqueue()
       } catch (error) {

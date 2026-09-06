@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
@@ -26,7 +26,7 @@ describe('AutoSyncPanel', () => {
     renderWithPort(createMemorySyncPort({ status: 'disconnected' }))
 
     expect(
-      await screen.findByRole('button', { name: 'Watchlist-Datei verbinden' })
+      await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' })
     ).toBeInTheDocument()
   })
 
@@ -38,7 +38,7 @@ describe('AutoSyncPanel', () => {
 
     expect(await screen.findByText(/unterstützt den direkten Dateizugriff nicht/)).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: 'Watchlist-Datei verbinden' })
+      screen.queryByRole('button', { name: 'Vorhandene Datei auswählen' })
     ).not.toBeInTheDocument()
   })
 
@@ -47,7 +47,7 @@ describe('AutoSyncPanel', () => {
     const port = createMemorySyncPort({ status: 'disconnected' })
     renderWithPort(port)
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Watchlist-Datei verbinden' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' }))
 
     await waitFor(() => expect(port.writes).toHaveLength(1))
     const parsed = fromJson(port.file ?? '')
@@ -120,8 +120,50 @@ describe('AutoSyncPanel', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Verbindung lösen' }))
 
     expect(
-      await screen.findByRole('button', { name: 'Watchlist-Datei verbinden' })
+      await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' })
     ).toBeInTheDocument()
     expect(port.disconnect).toHaveBeenCalledOnce()
+  })
+})
+
+describe('AutoSyncPanel — vorhandene Datei vs. neue Datei', () => {
+  it('uses the open picker for an existing file', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    renderWithPort(port)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' }))
+
+    expect(port.connect).toHaveBeenCalledWith('open')
+  })
+
+  it('uses the save picker only for a deliberately new file', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    renderWithPort(port)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Neue Datei anlegen' }))
+
+    expect(port.connect).toHaveBeenCalledWith('create')
+  })
+
+  it('hides the create button where the browser cannot create files', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    port.canCreate = () => false
+    renderWithPort(port)
+
+    expect(
+      await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Neue Datei anlegen' })).not.toBeInTheDocument()
+  })
+
+  it('offers a way out when write access was refused', async () => {
+    const port = createMemorySyncPort({ status: 'disconnected' })
+    port.connect = vi.fn(async () => 'permission-denied' as const)
+    renderWithPort(port)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Schreibrecht/)
+    expect(screen.getByRole('button', { name: 'Andere Datei wählen' })).toBeInTheDocument()
   })
 })

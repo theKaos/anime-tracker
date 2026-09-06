@@ -13,12 +13,28 @@ export interface PortFile {
   lastModified: number
 }
 
+/**
+ * 'open'   — eine bereits vorhandene Datei auswählen (showOpenFilePicker).
+ * 'create' — eine neue Datei anlegen (showSaveFilePicker).
+ *
+ * Die Trennung ist nicht kosmetisch. Auf Android führt der Speichern-Dialog über
+ * ACTION_CREATE_DOCUMENT: Tippt man dort eine vorhandene Datei an, überschreibt
+ * ein Cloud-Anbieter wie Dropbox sie nicht, sondern legt ein neues Dokument mit
+ * selbst vergebenem Namen an. Wer sich mit der Datei des anderen Geräts verbinden
+ * will, braucht deshalb zwingend den Öffnen-Dialog.
+ */
+export type ConnectMode = 'open' | 'create'
+
+export type ConnectResult = 'connected' | 'cancelled' | 'permission-denied'
+
 export interface SyncPort {
   readonly kind: string
   /** Kann dieser Browser den automatischen Modus überhaupt? */
   isSupported(): boolean
+  /** Kann dieser Browser zusätzlich eine neue Datei anlegen? */
+  canCreate(): boolean
   /** Datei auswählen lassen. 'cancelled', wenn der Nutzer den Dialog abbricht. */
-  connect(): Promise<'connected' | 'cancelled'>
+  connect(mode: ConnectMode): Promise<ConnectResult>
   /** Verbindung lösen — löscht nur die Referenz, nie die Datei. */
   disconnect(): Promise<void>
   getStatus(): Promise<PortStatus>

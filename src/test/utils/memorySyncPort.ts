@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { PortFile, PortStatus, SyncPort } from '@/lib/sync/syncPort'
+import type { ConnectMode, PortFile, PortStatus, SyncPort } from '@/lib/sync/syncPort'
 
 export interface MemorySyncPort extends SyncPort {
   /** Aktueller Dateiinhalt, null wenn die Datei noch nicht existiert. */
@@ -8,6 +8,8 @@ export interface MemorySyncPort extends SyncPort {
   /** Nächster write() soll scheitern — für die Fehlerpfade. */
   failNextWrite: Error | null
   writes: string[]
+  /** Mit welchem Modus zuletzt verbunden wurde. */
+  connectedWith: ConnectMode | null
 }
 
 /**
@@ -21,10 +23,13 @@ export function createMemorySyncPort(initial: Partial<MemorySyncPort> = {}): Mem
     status: initial.status ?? 'disconnected',
     failNextWrite: null,
     writes: [],
+    connectedWith: null,
 
     isSupported: () => true,
+    canCreate: () => true,
 
-    connect: vi.fn(async () => {
+    connect: vi.fn(async (mode: ConnectMode) => {
+      port.connectedWith = mode
       port.status = 'connected'
       return 'connected' as const
     }),
