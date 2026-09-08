@@ -22,3 +22,18 @@ describe('WatchlistItem', () => {
     expect(links[0]).toHaveAttribute('href', '/anime/1')
   })
 })
+
+describe('WatchlistItem — Layout', () => {
+  it('lets the content column shrink below its content width', () => {
+    // Ohne min-w-0 kann diese Spalte nicht schrumpfen (Flex-Kinder haben
+    // min-width:auto) und schiebt den Entfernen-Button aus der Kachel heraus.
+    // Im echten Browser bei 375px waren das 163px über den Kachelrand hinaus.
+    renderWithProviders(<WatchlistItem entry={entry} />)
+
+    const button = screen.getByRole('button', { name: 'Entfernen' })
+    const column = button.parentElement
+
+    expect(column?.className).toContain('min-w-0')
+    expect(button.className).toContain('shrink-0')
+  })
+})

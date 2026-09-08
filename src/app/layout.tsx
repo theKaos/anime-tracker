@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <FileSyncProvider>
           <Header />
           <ReconnectBanner />
-          <main className="mx-auto min-h-screen max-w-[1240px] px-[34px] py-8">{children}</main>
+          <main className="mx-auto min-h-screen max-w-[1240px] px-4 py-8 sm:px-[34px]">{children}</main>
           <Footer />
         </FileSyncProvider>
       </body>

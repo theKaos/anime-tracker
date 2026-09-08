@@ -13,7 +13,9 @@ export function ProgressControl({
   const percent = totalEpisodes ? Math.min(100, Math.round((progress / totalEpisodes) * 100)) : null
 
   return (
-    <div className="flex items-center gap-3 font-mono text-ui">
+    // Umbruchfähig: Auf schmalen Geräten rutscht der Balken unter die Zählung,
+    // statt die Zeile über die Kachelbreite hinauszuschieben.
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-ui">
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -24,7 +26,14 @@ export function ProgressControl({
         >
           −
         </Button>
-        <span aria-label="Episoden-Fortschritt" className="w-14 text-center text-text">
+        {/*
+          Breit genug für zweistellig/zweistellig ("10 / 12"). Mit w-14 lief der
+          Text über und hat die Mindestbreite der ganzen Zeile hochgetrieben.
+        */}
+        <span
+          aria-label="Episoden-Fortschritt"
+          className="min-w-[4.5rem] text-center tabular-nums whitespace-nowrap text-text"
+        >
           {progress} <span className="text-text-muted">/ {totalEpisodes ?? '?'}</span>
         </span>
         <Button
@@ -44,7 +53,7 @@ export function ProgressControl({
           aria-valuenow={progress}
           aria-valuemin={0}
           aria-valuemax={totalEpisodes ?? undefined}
-          className="h-5 w-28 overflow-hidden rounded-card bg-border"
+          className="h-5 w-full overflow-hidden rounded-card bg-border sm:w-28"
         >
           <div className="h-full bg-primary transition-[width] duration-200" style={{ width: `${percent}%` }} />
         </div>
