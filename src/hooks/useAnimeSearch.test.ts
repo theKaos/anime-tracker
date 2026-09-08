@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAnimeSearch } from './useAnimeSearch'
 import { DEFAULT_FILTERS } from '@/lib/utils/searchParams'
 import type { Anime } from '@/types/anime'
@@ -76,5 +76,56 @@ describe('useAnimeSearch', () => {
     expect(result.current.anime.length).toBeGreaterThan(1)
 
     spy.mockRestore()
+  })
+})
+
+// Stabile Referenz: Ein frisches [] bei jedem Render würde den Reset-Effekt
+// endlos neu auslösen. Die Komponente reicht ebenfalls eine stabile Prop durch.
+const EMPTY: Anime[] = []
+
+describe('useAnimeSearch — Browser-Fallback, wenn der Server nichts liefern konnte', () => {
+  it('loads the first page in the browser when the server fetch failed', async () => {
+    const { result } = renderHook(() => useAnimeSearch(EMPTY, true, DEFAULT_FILTERS, true))
+
+    await waitFor(() => expect(result.current.anime.length).toBeGreaterThan(0))
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.error).toBeNull()
+  })
+
+  it('does not fetch on its own when the server delivered the page', async () => {
+    const spy = vi.spyOn(anilistClient, 'fetchAnimeList')
+
+    renderHook(() => useAnimeSearch(initialAnime, true, DEFAULT_FILTERS, false))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  it('shows an error when the browser cannot reach AniList either', async () => {
+    const spy = vi
+      .spyOn(anilistClient, 'fetchAnimeList')
+      .mockRejectedValueOnce(new Error('AniList ist nicht erreichbar: failed to fetch'))
+
+    const { result } = renderHook(() => useAnimeSearch(EMPTY, true, DEFAULT_FILTERS, true))
+
+    await waitFor(() => expect(result.current.error).toMatch(/nicht erreichbar/))
+    expect(result.current.isLoading).toBe(false)
+    spy.mockRestore()
+  })
+
+  it('retries the initial load on demand', async () => {
+    const spy = vi
+      .spyOn(anilistClient, 'fetchAnimeList')
+      .mockRejectedValueOnce(new Error('einmal daneben'))
+
+    const { result } = renderHook(() => useAnimeSearch(EMPTY, true, DEFAULT_FILTERS, true))
+    await waitFor(() => expect(result.current.error).toBeTruthy())
+
+    spy.mockRestore()
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(result.current.anime.length).toBeGreaterThan(0))
+    expect(result.current.error).toBeNull()
   })
 })
