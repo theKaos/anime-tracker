@@ -69,3 +69,22 @@ describe('watchlistReducer', () => {
     expect(watchlistReducer([entry], { type: 'REPLACE_ALL', entries: next })).toEqual(next)
   })
 })
+
+describe('watchlistReducer — Randfälle', () => {
+  it('leaves other entries alone when reviving a tombstone', () => {
+    const other = makeEntry({ animeId: 2 })
+    const tombstone = makeEntry({ animeId: 1, deletedAt: '2026-02-01T00:00:00.000Z' })
+
+    const result = watchlistReducer([tombstone, other], { type: 'ADD', entry })
+
+    expect(result[0].deletedAt).toBeNull()
+    expect(result[1]).toBe(other)
+  })
+
+  it('returns the state unchanged for an unknown action', () => {
+    const state = [entry]
+    const unknown = { type: 'UNKNOWN' } as unknown as Parameters<typeof watchlistReducer>[1]
+
+    expect(watchlistReducer(state, unknown)).toBe(state)
+  })
+})

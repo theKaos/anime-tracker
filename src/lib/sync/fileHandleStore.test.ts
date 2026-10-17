@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearFileHandle, loadFileHandle, saveFileHandle } from './fileHandleStore'
 
 /**
@@ -40,5 +40,54 @@ describe('fileHandleStore', () => {
   it('clearing twice is not an error', async () => {
     await clearFileHandle()
     await expect(clearFileHandle()).resolves.toBeUndefined()
+  })
+})
+
+describe('fileHandleStore — wenn IndexedDB versagt', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /** Ein IDBRequest-Ersatz, der im nächsten Tick scheitert. */
+  function failingRequest(error: DOMException | null) {
+    const request: { error: DOMException | null; onerror?: () => void } = { error }
+    queueMicrotask(() => request.onerror?.())
+    return request
+  }
+
+  it('without IndexedDB, saving fails loudly but loading and clearing stay quiet', async () => {
+    vi.stubGlobal('indexedDB', undefined)
+
+    await expect(saveFileHandle(handle)).rejects.toThrow('nicht verfügbar')
+    await expect(loadFileHandle()).resolves.toBeNull()
+    await expect(clearFileHandle()).resolves.toBeUndefined()
+  })
+
+  it('reports a database that cannot be opened', async () => {
+    vi.stubGlobal('indexedDB', { open: () => failingRequest(null) })
+
+    await expect(saveFileHandle(handle)).rejects.toThrow('konnte nicht geöffnet werden')
+  })
+
+  it('passes the browser error through when opening fails with one', async () => {
+    const quota = new DOMException('Kein Platz', 'QuotaExceededError')
+    vi.stubGlobal('indexedDB', { open: () => failingRequest(quota) })
+
+    await expect(saveFileHandle(handle)).rejects.toBe(quota)
+  })
+
+  it('reports a failing read or write inside the transaction', async () => {
+    const db = {
+      transaction: () => ({ objectStore: () => ({ put: () => failingRequest(null) }) }),
+    }
+    vi.stubGlobal('indexedDB', {
+      open: () => {
+        const request: { result: unknown; onsuccess?: () => void } = { result: db }
+        queueMicrotask(() => request.onsuccess?.())
+        return request
+      },
+    })
+
+    await expect(saveFileHandle(handle)).rejects.toThrow('Zugriff fehlgeschlagen')
   })
 })

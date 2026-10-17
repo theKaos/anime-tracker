@@ -34,7 +34,7 @@ export default function Error({
           router.refresh()
           reset()
         }}
-        className="rounded-card bg-primary px-4 py-2 text-white"
+        className="rounded-card bg-primary px-4 py-2 text-on-accent"
       >
         Erneut versuchen
       </button>

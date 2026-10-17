@@ -1,6 +1,12 @@
 export const PAGE_SIZE = 20
 export const STORAGE_KEY = 'anime-tracker:watchlist:v1'
-export const ANILIST_API_URL = 'https://graphql.anilist.co'
+/**
+ * Überschreibbar, damit die Playwright-Tests gegen einen lokalen Mock laufen statt
+ * gegen die echte API. NEXT_PUBLIC_, weil der Browser dieselbe Adresse braucht —
+ * Next.js setzt den Wert beim Build fest ein.
+ */
+export const ANILIST_API_URL =
+  process.env.NEXT_PUBLIC_ANILIST_API_URL || 'https://graphql.anilist.co'
 export const DEBOUNCE_MS = 400
 
 /**

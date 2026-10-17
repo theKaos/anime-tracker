@@ -27,7 +27,7 @@ export function GenreFilter({
             className={cn(
               'rounded-card border px-2 py-1 text-meta font-mono uppercase tracking-wide transition-colors',
               active
-                ? 'border-secondary bg-secondary text-white'
+                ? 'border-secondary bg-secondary text-on-accent'
                 : 'border-border bg-surface text-text-muted hover:border-secondary'
             )}
           >

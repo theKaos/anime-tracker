@@ -40,3 +40,15 @@ describe('ManualTransferButtons', () => {
     expect(screen.getByRole('button', { name: 'Watchlist exportieren' })).toBeDisabled()
   })
 })
+
+describe('ManualTransferButtons — Import-Knopf', () => {
+  it('opens the hidden file input', async () => {
+    render(<ManualTransferButtons onExport={vi.fn()} onFileSelected={vi.fn()} />)
+    const input = screen.getByLabelText('Watchlist-Datei auswählen') as HTMLInputElement
+    const click = vi.spyOn(input, 'click')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Datei importieren' }))
+
+    expect(click).toHaveBeenCalledOnce()
+  })
+})

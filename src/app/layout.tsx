@@ -6,8 +6,27 @@ import { Footer } from '@/components/layout/Footer'
 import { ReconnectBanner } from '@/components/layout/ReconnectBanner'
 import './globals.css'
 
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-sans' })
-const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
+/*
+ * next/font überschreibt mit `variable` die gleichnamige Tailwind-Variable aus
+ * globals.css, deren Ersatzschriften gelten dann nicht mehr — daher `fallback`.
+ *
+ * Für JetBrains Mono zusätzlich `adjustFontFallback: false`: Sonst legt Next.js
+ * als Ersatz ein auf 134,6 % vergrößertes Arial an. Das trifft die mittlere
+ * Zeichenbreite, aber nicht die der Großbuchstaben — die Genre-Knöpfe (uppercase)
+ * waren bis zum Schrifttausch rund 30 % breiter, brachen anders um, und das
+ * Anime-Raster sprang (CLS 0,34). Eine echte Monospace-Schrift liegt viel näher.
+ */
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+})
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  adjustFontFallback: false,
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+})
 
 export const metadata: Metadata = {
   title: 'Anime Tracker',

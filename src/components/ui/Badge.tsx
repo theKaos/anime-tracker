@@ -6,8 +6,8 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const VARIANT_CLASSES: Record<NonNullable<BadgeProps['variant']>, string> = {
-  primary: 'bg-primary text-white',
-  secondary: 'bg-secondary text-white',
+  primary: 'bg-primary text-on-accent',
+  secondary: 'bg-secondary text-on-accent',
   neutral: 'bg-border text-text',
 }
 

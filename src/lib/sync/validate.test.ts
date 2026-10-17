@@ -97,3 +97,85 @@ describe('parseWatchlistFile — Sonderfälle aus dem echten Betrieb', () => {
     if (result.ok) expect(result.file.entries).toEqual([entry])
   })
 })
+
+describe('parseWatchlistFile — einzelne Einträge', () => {
+  function parseEntries(entries: unknown[]) {
+    const result = parseWatchlistFile(fileWith({ entries }))
+    if (!result.ok) throw new Error('Datei sollte gültig sein')
+    return result.file.entries
+  }
+
+  const snapshot = entry.snapshot
+
+  it.each([
+    ['kein Objekt', 'eintrag'],
+    ['ein Array', [entry]],
+    ['animeId fehlt', { ...entry, animeId: undefined }],
+    ['animeId ist NaN', { ...entry, animeId: Number.NaN }],
+    ['animeId ist ein String', { ...entry, animeId: '1' }],
+    ['unbekannter Status', { ...entry, status: 'REWATCHING' }],
+    ['Status ist keine Zeichenkette', { ...entry, status: 3 }],
+    ['negativer Fortschritt', { ...entry, progress: -1 }],
+    ['Fortschritt ist ein String', { ...entry, progress: '3' }],
+    ['Folgenzahl ist ein String', { ...entry, totalEpisodes: '12' }],
+    ['updatedAt ist kein Datum', { ...entry, updatedAt: 'gestern' }],
+    ['deletedAt ist kein Datum', { ...entry, deletedAt: 'nie' }],
+    ['snapshot fehlt', { ...entry, snapshot: null }],
+    ['Titel fehlt', { ...entry, snapshot: { ...snapshot, title: 'Anime' } }],
+    ['Romaji-Titel fehlt', { ...entry, snapshot: { ...snapshot, title: { english: 'X' } } }],
+    ['Cover fehlt', { ...entry, snapshot: { ...snapshot, coverImage: null } }],
+  ])('drops an entry when %s', (_, broken) => {
+    expect(parseEntries([broken, entry])).toEqual([entry])
+  })
+
+  it('accepts an unknown episode count', () => {
+    expect(parseEntries([{ ...entry, totalEpisodes: null }])[0].totalEpisodes).toBeNull()
+  })
+
+  it('falls back to updatedAt when addedAt is missing or broken', () => {
+    const [missing, broken] = parseEntries([
+      { ...entry, animeId: 1, addedAt: undefined },
+      { ...entry, animeId: 2, addedAt: 'irgendwann' },
+    ])
+
+    expect(missing.addedAt).toBe(entry.updatedAt)
+    expect(broken.addedAt).toBe(entry.updatedAt)
+  })
+
+  it('fills optional title parts and the format with neutral values', () => {
+    const [parsed] = parseEntries([
+      { ...entry, snapshot: { title: { romaji: 'Nur Romaji' }, coverImage: '/c.jpg' } },
+    ])
+
+    expect(parsed.snapshot).toEqual({
+      title: { romaji: 'Nur Romaji', english: null, native: '' },
+      coverImage: '/c.jpg',
+      format: null,
+    })
+  })
+})
+
+describe('parseWatchlistFile — Dateikopf', () => {
+  it('rejects a version below 1', () => {
+    expect(parseWatchlistFile(fileWith({ schemaVersion: 0 }))).toMatchObject({
+      ok: false,
+      error: { code: 'unsupported-version' },
+    })
+  })
+
+  it('uses the epoch when the export time is missing', () => {
+    const result = parseWatchlistFile(fileWith({ exportedAt: undefined }))
+    expect(result.ok && result.file.exportedAt).toBe(new Date(0).toISOString())
+  })
+})
+
+describe('parseWatchlistFile — vollständiger Titel', () => {
+  it('keeps an English title', () => {
+    const withEnglish = makeEntry({
+      snapshot: { ...entry.snapshot, title: { romaji: 'Shingeki', english: 'Attack', native: '進撃' } },
+    })
+    const result = parseWatchlistFile(fileWith({ entries: [withEnglish] }))
+
+    expect(result.ok && result.file.entries[0].snapshot.title.english).toBe('Attack')
+  })
+})

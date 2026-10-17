@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAnimeSearch } from './useAnimeSearch'
 import { DEFAULT_FILTERS } from '@/lib/utils/searchParams'
@@ -127,5 +127,68 @@ describe('useAnimeSearch — Browser-Fallback, wenn der Server nichts liefern ko
 
     await waitFor(() => expect(result.current.anime.length).toBeGreaterThan(0))
     expect(result.current.error).toBeNull()
+  })
+})
+
+describe('useAnimeSearch — Randfälle', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('does not load more when there is no next page', async () => {
+    const spy = vi.spyOn(anilistClient, 'fetchAnimeList')
+    const { result } = renderHook(() => useAnimeSearch(initialAnime, false, DEFAULT_FILTERS))
+
+    await act(async () => {
+      await result.current.loadMore()
+    })
+
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('uses a generic message when something other than an Error is thrown', async () => {
+    vi.spyOn(anilistClient, 'fetchAnimeList').mockRejectedValueOnce('kaputt')
+    const { result } = renderHook(() => useAnimeSearch(initialAnime, true, DEFAULT_FILTERS))
+
+    await act(async () => {
+      await result.current.loadMore()
+    })
+
+    expect(result.current.error).toBe('Die Anime konnten nicht geladen werden.')
+  })
+
+  it('retry loads the next page again after a failed loadMore', async () => {
+    const spy = vi
+      .spyOn(anilistClient, 'fetchAnimeList')
+      .mockRejectedValueOnce(new Error('weg'))
+      .mockResolvedValueOnce({ anime: [{ ...initialAnime[0], id: 2 }], hasNextPage: false })
+    const { result } = renderHook(() => useAnimeSearch(initialAnime, true, DEFAULT_FILTERS))
+
+    await act(async () => {
+      await result.current.loadMore()
+    })
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(result.current.anime).toHaveLength(2))
+    expect(spy).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
+    expect(result.current.error).toBeNull()
+  })
+
+  it('drops a late browser result after unmount', async () => {
+    let resolve!: (value: { anime: Anime[]; hasNextPage: boolean }) => void
+    vi.spyOn(anilistClient, 'fetchAnimeList').mockReturnValueOnce(
+      new Promise((r) => {
+        resolve = r
+      })
+    )
+    const noAnime: Anime[] = []
+    const { result, unmount } = renderHook(() => useAnimeSearch(noAnime, false, DEFAULT_FILTERS, true))
+
+    unmount()
+    await act(async () => {
+      resolve({ anime: initialAnime, hasNextPage: true })
+    })
+
+    expect(result.current.anime).toEqual([])
   })
 })

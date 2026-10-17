@@ -85,3 +85,20 @@ describe('removeFilter', () => {
     expect(removeFilter(filters, 'year').year).toBeNull()
   })
 })
+
+describe('filtersToSearchParams — alle Filter gesetzt', () => {
+  it('writes season, format, genres and a non-default sort', () => {
+    const params = filtersToSearchParams({
+      ...DEFAULT_FILTERS,
+      season: 'WINTER',
+      format: 'MOVIE',
+      genres: ['Action', 'Drama'],
+      sort: 'SCORE_DESC',
+    })
+
+    expect(params.get('season')).toBe('WINTER')
+    expect(params.get('format')).toBe('MOVIE')
+    expect(params.get('genres')).toBe('Action,Drama')
+    expect(params.get('sort')).toBe('SCORE_DESC')
+  })
+})

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Anime } from '@/types/anime'
@@ -6,8 +6,10 @@ import { DEFAULT_FILTERS } from '@/lib/utils/searchParams'
 import * as anilistClient from '@/lib/anilist/client'
 import { SearchExperience } from './SearchExperience'
 
+const push = vi.hoisted(() => vi.fn())
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push, refresh: vi.fn() }),
 }))
 
 // jsdom kennt keinen IntersectionObserver; der Infinite-Scroll-Trigger baut aber
@@ -110,3 +112,80 @@ describe('SearchExperience', () => {
 })
 
 class AniListErrorLike extends Error {}
+
+describe('SearchExperience — Filter landen in der URL', () => {
+  beforeEach(() => {
+    push.mockClear()
+  })
+
+  it('pushes the chosen filter as a query string', async () => {
+    render(<SearchExperience initialAnime={anime} initialHasNextPage={false} filters={DEFAULT_FILTERS} />)
+
+    await userEvent.selectOptions(screen.getByLabelText('Season'), 'FALL')
+
+    expect(push).toHaveBeenCalledWith('/?season=FALL')
+  })
+
+  it('goes back to the bare start page when the last filter is cleared', async () => {
+    render(
+      <SearchExperience
+        initialAnime={anime}
+        initialHasNextPage={false}
+        filters={{ ...DEFAULT_FILTERS, season: 'FALL' }}
+      />
+    )
+
+    await userEvent.click(screen.getByText(/FALL ✕/))
+
+    expect(push).toHaveBeenCalledWith('/')
+  })
+
+  it('pushes a typed search after the debounce', async () => {
+    render(<SearchExperience initialAnime={anime} initialHasNextPage={false} filters={DEFAULT_FILTERS} />)
+
+    await userEvent.type(screen.getByLabelText('Anime suchen'), 'frieren')
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/?search=frieren'))
+  })
+})
+
+describe('SearchExperience — kein Dauerfeuer nach einem Fehler', () => {
+  /** Meldet das Element sofort als sichtbar — wie im Browser, wenn die Liste leer ist. */
+  class AlwaysVisibleObserver extends NoopObserver {
+    constructor(private readonly callback: IntersectionObserverCallback) {
+      super()
+    }
+    observe = vi.fn(() => {
+      this.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver
+      )
+    })
+  }
+
+  afterEach(() => {
+    global.IntersectionObserver = NoopObserver as unknown as typeof IntersectionObserver
+    vi.restoreAllMocks()
+  })
+
+  it('stops loading on its own once a request failed', async () => {
+    global.IntersectionObserver = AlwaysVisibleObserver as unknown as typeof IntersectionObserver
+    const spy = vi
+      .spyOn(anilistClient, 'fetchAnimeList')
+      .mockRejectedValue(new Error('AniList ist nicht erreichbar'))
+
+    render(
+      <SearchExperience
+        initialAnime={EMPTY}
+        initialHasNextPage
+        filters={DEFAULT_FILTERS}
+        serverFetchFailed
+      />
+    )
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    // Ein Versuch für die erste Seite — nicht Dutzende hinterher.
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+})

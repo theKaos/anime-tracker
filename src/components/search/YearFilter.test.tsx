@@ -11,3 +11,14 @@ describe('YearFilter', () => {
     expect(onChange).toHaveBeenCalledWith(2020)
   })
 })
+
+describe('YearFilter — zurücksetzen', () => {
+  it('shows the current year and reports null for the placeholder', async () => {
+    const onChange = vi.fn()
+    render(<YearFilter value={2020} onChange={onChange} />)
+
+    expect(screen.getByLabelText('Erscheinungsjahr')).toHaveValue('2020')
+    await userEvent.selectOptions(screen.getByLabelText('Erscheinungsjahr'), '')
+    expect(onChange).toHaveBeenCalledWith(null)
+  })
+})

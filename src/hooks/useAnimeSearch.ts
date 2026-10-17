@@ -23,7 +23,10 @@ export function useAnimeSearch(
   const [anime, setAnime] = useState(initialAnime)
   const [hasNextPage, setHasNextPage] = useState(initialHasNextPage)
   const [page, setPage] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
+  // Startet als "lädt", wenn der Browser die erste Seite selbst holen muss. Sonst
+  // feuert der Infinite-Scroll-Trigger beim Mounten — sein Effekt läuft vor dem
+  // dieses Hooks — und lädt Seite 2, bevor Seite 1 überhaupt angefragt wurde.
+  const [isLoading, setIsLoading] = useState(needsInitialLoad)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
 

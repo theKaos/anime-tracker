@@ -11,3 +11,14 @@ describe('SeasonFilter', () => {
     expect(onChange).toHaveBeenCalledWith('FALL')
   })
 })
+
+describe('SeasonFilter — zurücksetzen', () => {
+  it('shows the current season and reports null for the placeholder', async () => {
+    const onChange = vi.fn()
+    render(<SeasonFilter value="FALL" onChange={onChange} />)
+
+    expect(screen.getByLabelText('Season')).toHaveValue('FALL')
+    await userEvent.selectOptions(screen.getByLabelText('Season'), '')
+    expect(onChange).toHaveBeenCalledWith(null)
+  })
+})

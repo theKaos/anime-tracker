@@ -28,7 +28,7 @@ export function WatchlistFilterTabs({
           onClick={() => onChange(tab.value)}
           className={cn(
             'rounded-card px-3 py-1.5 text-label font-semibold transition-colors',
-            value === tab.value ? 'bg-primary text-white' : 'bg-surface text-text-muted hover:text-text'
+            value === tab.value ? 'bg-primary text-on-accent' : 'bg-surface text-text-muted hover:text-text'
           )}
         >
           {tab.label}

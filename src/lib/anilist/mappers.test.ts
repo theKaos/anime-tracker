@@ -44,6 +44,11 @@ describe('mapMediaToAnime', () => {
     const media = { ...baseMedia, coverImage: { large: null } }
     expect(mapMediaToAnime(media).coverImage).toBe('/placeholder-cover.svg')
   })
+
+  it('maps a missing format and season to null', () => {
+    const media = { ...baseMedia, format: null, season: null } as unknown as AniListMedia
+    expect(mapMediaToAnime(media)).toMatchObject({ format: null, season: null })
+  })
 })
 
 describe('mapMediaToAnimeDetail', () => {

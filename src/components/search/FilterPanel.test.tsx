@@ -19,3 +19,23 @@ describe('FilterPanel', () => {
     expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_FILTERS, genres: [] })
   })
 })
+
+describe('FilterPanel — jeder Filter meldet sich', () => {
+  it('passes year, format, sort and genre changes on with the other filters intact', async () => {
+    const onChange = vi.fn()
+    const filters = { ...DEFAULT_FILTERS, search: 'frieren' }
+    render(<FilterPanel filters={filters} onChange={onChange} />)
+
+    await userEvent.selectOptions(screen.getByLabelText('Erscheinungsjahr'), '2020')
+    expect(onChange).toHaveBeenLastCalledWith({ ...filters, year: 2020 })
+
+    await userEvent.selectOptions(screen.getByLabelText('Format'), 'MOVIE')
+    expect(onChange).toHaveBeenLastCalledWith({ ...filters, format: 'MOVIE' })
+
+    await userEvent.selectOptions(screen.getByLabelText('Sortierung'), 'SCORE_DESC')
+    expect(onChange).toHaveBeenLastCalledWith({ ...filters, sort: 'SCORE_DESC' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Action' }))
+    expect(onChange).toHaveBeenLastCalledWith({ ...filters, genres: ['Action'] })
+  })
+})

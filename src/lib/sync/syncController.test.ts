@@ -416,3 +416,93 @@ describe('connect mode — der Android-Fall', () => {
     expect(port.write).not.toHaveBeenCalled()
   })
 })
+
+describe('createSyncController — Fehlermeldungen', () => {
+  it('explains a moved or deleted file', async () => {
+    const { controller, port, lastState } = setup()
+    port.failNextWrite = new DOMException('weg', 'NotFoundError') as unknown as Error
+
+    await controller.syncNow()
+
+    expect(lastState().error).toMatch(/verschoben oder gelöscht/)
+  })
+
+  it('shows the message of an ordinary error', async () => {
+    const { controller, port, lastState } = setup()
+    port.failNextWrite = new Error('Platte voll')
+
+    await controller.syncNow()
+
+    expect(lastState().error).toBe('Platte voll')
+  })
+
+  it('falls back to a generic message for errors without text', async () => {
+    const { controller, port, lastState } = setup()
+    port.write = vi.fn(async () => {
+      throw 'kaputt'
+    })
+
+    await controller.syncNow()
+
+    expect(lastState().error).toBe('Der Abgleich ist fehlgeschlagen.')
+  })
+
+  it('treats a failing status query as disconnected instead of crashing', async () => {
+    const { controller, port, lastState } = setup()
+    port.getStatus = vi.fn(async () => {
+      throw new Error('IndexedDB weg')
+    })
+
+    await controller.refreshStatus()
+
+    expect(lastState().status).toBe('disconnected')
+    expect(port.read).not.toHaveBeenCalled()
+  })
+
+  it('reports a failing connect dialog', async () => {
+    const { controller, port, lastState } = setup({ port: createMemorySyncPort() })
+    port.connect = vi.fn(async () => {
+      throw new DOMException('verboten', 'NotAllowedError')
+    })
+
+    await controller.connect('open')
+
+    expect(lastState().error).toMatch(/Zugriff auf die Datei wurde entzogen/)
+  })
+})
+
+describe('createSyncController — Timer', () => {
+  it('disconnect cancels a scheduled sync', async () => {
+    vi.useFakeTimers()
+    const { controller, port } = setup()
+
+    controller.scheduleSync()
+    await controller.disconnect()
+    await vi.advanceTimersByTimeAsync(50)
+
+    expect(port.write).not.toHaveBeenCalled()
+  })
+
+  it('ignores scheduleSync after dispose', async () => {
+    vi.useFakeTimers()
+    const { controller, port } = setup()
+
+    controller.dispose()
+    controller.scheduleSync()
+    await vi.advanceTimersByTimeAsync(50)
+
+    expect(port.read).not.toHaveBeenCalled()
+  })
+
+  it('collapses rapid changes into one sync', async () => {
+    vi.useFakeTimers()
+    const { controller, port } = setup()
+
+    controller.scheduleSync()
+    controller.scheduleSync()
+    controller.scheduleSync()
+    await vi.advanceTimersByTimeAsync(50)
+
+    expect(port.read).toHaveBeenCalledTimes(1)
+  })
+})

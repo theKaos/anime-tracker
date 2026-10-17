@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FileSyncPanel } from './FileSyncPanel'
+import * as download from '@/lib/sync/download'
 import { toJson } from '@/lib/sync/serialize'
 import { makeEntry } from '@/test/utils/watchlistFactory'
 import {
@@ -160,5 +161,32 @@ describe('FileSyncPanel — leere Datei', () => {
 
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     expect(getWatchlistEntries().map((entry) => entry.animeId)).toEqual([5])
+  })
+})
+
+describe('FileSyncPanel — Lesefehler und Dialog', () => {
+  it('explains a file the browser could not read', async () => {
+    setWatchlistEntries([makeEntry({ animeId: 1 })])
+    const read = vi.spyOn(download, 'readFileAsText').mockRejectedValueOnce(new Error('weg'))
+    render(<FileSyncPanel />)
+
+    await userEvent.upload(screen.getByLabelText('Watchlist-Datei auswählen'), jsonFile('{}'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Die Datei konnte nicht gelesen werden.')
+    expect(getWatchlistEntries()).toHaveLength(1)
+    read.mockRestore()
+  })
+
+  it('closes the summary after an import', async () => {
+    render(<FileSyncPanel />)
+    await userEvent.upload(
+      screen.getByLabelText('Watchlist-Datei auswählen'),
+      jsonFile(toJson([makeEntry({ animeId: 5 })]))
+    )
+    await screen.findByRole('dialog')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Schließen' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

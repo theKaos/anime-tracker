@@ -80,3 +80,9 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime('irgendwann', now)).toBe('unbekannt')
   })
 })
+
+describe('formatSeasonYear — nur Saison', () => {
+  it('shows the season alone when the year is unknown', () => {
+    expect(formatSeasonYear(null, 'SPRING')).toBe('Spring')
+  })
+})

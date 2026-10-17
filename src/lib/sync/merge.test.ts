@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeWatchlists } from './merge'
+import { mergeWatchlists, pickWinner } from './merge'
 import { makeEntry } from '@/test/utils/watchlistFactory'
 
 const T1 = '2026-01-01T00:00:00.000Z'
@@ -137,5 +137,71 @@ describe('mergeWatchlists', () => {
         removed: 0,
       })
     })
+  })
+})
+
+describe('pickWinner — Gleichstände', () => {
+  it('treats an unreadable updatedAt as oldest', () => {
+    const broken = makeEntry({ updatedAt: 'kaputt', progress: 99 })
+    const valid = makeEntry({ updatedAt: T1 })
+
+    expect(pickWinner(broken, valid)).toBe(valid)
+    expect(pickWinner(valid, broken)).toBe(valid)
+  })
+
+  it('returns the first argument for two identical versions', () => {
+    const a = makeEntry({ updatedAt: T2 })
+    const b = makeEntry({ updatedAt: T2 })
+
+    expect(pickWinner(a, b)).toBe(a)
+    expect(pickWinner(b, a)).toBe(b)
+  })
+
+  it('decides a full tie by a stable key, regardless of argument order', () => {
+    const a = makeEntry({ updatedAt: T2, status: 'COMPLETED', totalEpisodes: null })
+    const b = makeEntry({ updatedAt: T2, status: 'WATCHING', totalEpisodes: null })
+
+    expect(pickWinner(a, b)).toBe(a)
+    expect(pickWinner(b, a)).toBe(a)
+  })
+
+  it('compares two tombstones by their key as well', () => {
+    const a = makeEntry({ updatedAt: T3, deletedAt: T1 })
+    const b = makeEntry({ updatedAt: T3, deletedAt: T2 })
+
+    expect(pickWinner(a, b)).toBe(a)
+    expect(pickWinner(b, a)).toBe(a)
+  })
+})
+
+describe('mergeWatchlists — Statistik mit lokalen Grabsteinen', () => {
+  it('counts a revived entry as added, not as updated', () => {
+    const local = [makeEntry({ animeId: 1, updatedAt: T1, deletedAt: T1 })]
+    const incoming = [makeEntry({ animeId: 1, updatedAt: T2 })]
+
+    expect(mergeWatchlists(local, incoming).stats).toEqual({
+      unchanged: 0,
+      updated: 0,
+      added: 1,
+      removed: 0,
+    })
+  })
+})
+
+describe('pickWinner — Reihenfolge der Argumente', () => {
+  it('picks the higher progress from either side', () => {
+    const low = makeEntry({ updatedAt: T2, progress: 1 })
+    const high = makeEntry({ updatedAt: T2, progress: 5 })
+
+    expect(pickWinner(low, high)).toBe(high)
+    expect(pickWinner(high, low)).toBe(high)
+  })
+
+  it('picks the surviving entry from either side', () => {
+    const alive = makeEntry({ updatedAt: T2 })
+    const dead = makeEntry({ updatedAt: T2, deletedAt: T2 })
+
+    expect(pickWinner(dead, alive)).toBe(alive)
+    expect(pickWinner(alive, dead)).toBe(alive)
   })
 })

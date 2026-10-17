@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadWatchlist, saveWatchlist } from './storage'
 import { STORAGE_KEY } from '@/constants/config'
 import { makeEntry } from '@/test/utils/watchlistFactory'
@@ -32,5 +32,34 @@ describe('storage', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([legacy]))
 
     expect(loadWatchlist()).toEqual([entry])
+  })
+})
+
+describe('storage — fremde Daten', () => {
+  it('ignores JSON that is not a list', () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ entries: [entry] }))
+    expect(loadWatchlist()).toEqual([])
+  })
+
+  it('drops list items that are not entries', () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([null, 42, 'x', entry]))
+    expect(loadWatchlist()).toEqual([entry])
+  })
+})
+
+describe('storage — auf dem Server', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('loads nothing and writes nothing without window', () => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([entry]))
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    vi.stubGlobal('window', undefined)
+
+    expect(loadWatchlist()).toEqual([])
+    saveWatchlist([entry])
+    expect(setItem).not.toHaveBeenCalled()
+    setItem.mockRestore()
   })
 })

@@ -19,6 +19,8 @@
   --color-surface: #1F1E22;
   --color-text: #ECEEEF;
   --color-text-muted: #ECEEEF99;
+  /* Text auf Orange und Türkis. Weiß kam dort nur auf 2,6–3,5:1, nötig sind 4,5:1. */
+  --color-on-accent: #17161A;
   --color-border: #FFFFFF1f;
 
   --radius-image: 4px;

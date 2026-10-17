@@ -72,3 +72,13 @@ describe('filterWatchlistEntries', () => {
     expect(filterWatchlistEntries(withTombstone, 'WATCHING')).toEqual(entries)
   })
 })
+
+describe('sortWatchlistEntries — unbekannte Sortierung', () => {
+  it('keeps the original order as a copy', () => {
+    const entries = [makeEntry({ title: 'B', progress: 1 }), makeEntry({ title: 'A', progress: 2 })]
+    const result = sortWatchlistEntries(entries, 'UNKNOWN' as never)
+
+    expect(result).toEqual(entries)
+    expect(result).not.toBe(entries)
+  })
+})

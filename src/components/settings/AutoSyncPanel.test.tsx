@@ -167,3 +167,27 @@ describe('AutoSyncPanel — vorhandene Datei vs. neue Datei', () => {
     expect(screen.getByRole('button', { name: 'Andere Datei wählen' })).toBeInTheDocument()
   })
 })
+
+describe('AutoSyncPanel — weitere Knöpfe', () => {
+  it('syncs on demand while connected', async () => {
+    const port = createMemorySyncPort({ status: 'connected' })
+    renderWithPort(port)
+    await waitFor(() => expect(port.read).toHaveBeenCalledTimes(1))
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Jetzt abgleichen' }))
+
+    await waitFor(() => expect(port.read).toHaveBeenCalledTimes(2))
+  })
+
+  it('lets the user pick another file instead of granting access', async () => {
+    const port = createMemorySyncPort({ status: 'needs-permission' })
+    renderWithPort(port)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Andere Datei wählen' }))
+
+    expect(port.disconnect).toHaveBeenCalledOnce()
+    expect(
+      await screen.findByRole('button', { name: 'Vorhandene Datei auswählen' })
+    ).toBeInTheDocument()
+  })
+})

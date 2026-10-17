@@ -69,7 +69,17 @@ export function SearchExperience({
       )}
 
       <AnimeGrid anime={anime} />
-      <InfiniteScrollTrigger onIntersect={loadMore} disabled={!hasNextPage} isLoading={isLoading} />
+      {/*
+        Nach einem Fehler nicht automatisch weiterladen. Der Trigger bleibt sonst im
+        Bild, jeder gescheiterte Versuch baut den Observer neu und der feuert sofort
+        wieder — im Browser waren das rund 60 Anfragen pro Sekunde an AniList.
+        Wiederholt wird über den Knopf in der Fehlermeldung.
+      */}
+      <InfiniteScrollTrigger
+        onIntersect={loadMore}
+        disabled={!hasNextPage || error !== null}
+        isLoading={isLoading}
+      />
     </div>
   )
 }

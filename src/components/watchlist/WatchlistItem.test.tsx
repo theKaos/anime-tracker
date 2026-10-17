@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { getWatchlistEntries, setWatchlistEntries } from '@/test/utils/watchlistStoreTestUtils'
 import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils/renderWithProviders'
 import { WatchlistItem } from './WatchlistItem'
@@ -35,5 +37,35 @@ describe('WatchlistItem — Layout', () => {
 
     expect(column?.className).toContain('min-w-0')
     expect(button.className).toContain('shrink-0')
+  })
+})
+
+describe('WatchlistItem — Bedienung schreibt in den Store', () => {
+  beforeEach(() => {
+    setWatchlistEntries([entry])
+  })
+
+  it('changes the status', async () => {
+    renderWithProviders(<WatchlistItem entry={entry} />)
+
+    await userEvent.selectOptions(screen.getByLabelText('Status'), 'COMPLETED')
+
+    expect(getWatchlistEntries()[0].status).toBe('COMPLETED')
+  })
+
+  it('counts an episode forward', async () => {
+    renderWithProviders(<WatchlistItem entry={entry} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Episode vor' }))
+
+    expect(getWatchlistEntries()[0].progress).toBe(4)
+  })
+
+  it('removes the entry as a tombstone', async () => {
+    renderWithProviders(<WatchlistItem entry={entry} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Entfernen' }))
+
+    expect(getWatchlistEntries()[0].deletedAt).not.toBeNull()
   })
 })

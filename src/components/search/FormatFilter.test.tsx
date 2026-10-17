@@ -11,3 +11,14 @@ describe('FormatFilter', () => {
     expect(onChange).toHaveBeenCalledWith('MOVIE')
   })
 })
+
+describe('FormatFilter — zurücksetzen', () => {
+  it('shows the current format and reports null for the placeholder', async () => {
+    const onChange = vi.fn()
+    render(<FormatFilter value="TV" onChange={onChange} />)
+
+    expect(screen.getByLabelText('Format')).toHaveValue('TV')
+    await userEvent.selectOptions(screen.getByLabelText('Format'), '')
+    expect(onChange).toHaveBeenCalledWith(null)
+  })
+})

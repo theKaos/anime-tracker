@@ -31,3 +31,10 @@ describe('AnimeStats', () => {
     expect(screen.getByText('FINISHED')).toBeInTheDocument()
   })
 })
+
+describe('AnimeStats — unbekannte Werte', () => {
+  it('shows a dash for missing episodes and status', () => {
+    render(<AnimeStats anime={{ ...anime, episodes: null, duration: null, status: null }} />)
+    expect(screen.getAllByText('—')).toHaveLength(3)
+  })
+})

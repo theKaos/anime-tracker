@@ -23,3 +23,22 @@ describe('ActiveFilterChips', () => {
     expect(onRemove).toHaveBeenCalledWith('genres', 'Action')
   })
 })
+
+describe('ActiveFilterChips — Jahr, Saison, Format', () => {
+  it('offers a chip for each and removes the matching filter', async () => {
+    const onRemove = vi.fn()
+    render(
+      <ActiveFilterChips
+        filters={{ ...DEFAULT_FILTERS, year: 2021, season: 'WINTER', format: 'OVA' }}
+        onRemove={onRemove}
+      />
+    )
+
+    await userEvent.click(screen.getByText(/2021 ✕/))
+    expect(onRemove).toHaveBeenLastCalledWith('year', undefined)
+    await userEvent.click(screen.getByText(/WINTER ✕/))
+    expect(onRemove).toHaveBeenLastCalledWith('season', undefined)
+    await userEvent.click(screen.getByText(/OVA ✕/))
+    expect(onRemove).toHaveBeenLastCalledWith('format', undefined)
+  })
+})
