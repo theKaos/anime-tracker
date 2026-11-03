@@ -1,30 +1,42 @@
-export type MediaFormat = 'TV' | 'TV_SHORT' | 'MOVIE' | 'SPECIAL' | 'OVA' | 'ONA' | 'MUSIC'
-export type MediaSeason = 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL'
+import * as z from 'zod'
 
-export interface AnimeTitle {
-  romaji: string
-  english: string | null
-  native: string
-}
+export const MediaFormatSchema = z.enum(['TV', 'TV_SHORT', 'MOVIE', 'SPECIAL', 'OVA', 'ONA', 'MUSIC'])
+export type MediaFormat = z.infer<typeof MediaFormatSchema>
 
-export interface Anime {
-  id: number
-  title: AnimeTitle
-  coverImage: string
-  bannerImage: string | null
-  format: MediaFormat | null
-  episodes: number | null
-  duration: number | null
-  seasonYear: number | null
-  season: MediaSeason | null
-  genres: string[]
-  averageScore: number | null
-  popularity: number | null
-  status: string | null
-  studios: string[]
-  description: string | null
-}
+export const MediaSeasonSchema = z.enum(['WINTER', 'SPRING', 'SUMMER', 'FALL'])
+export type MediaSeason = z.infer<typeof MediaSeasonSchema>
 
-export interface AnimeDetail extends Anime {
-  relations: Anime[]
-}
+/** Unbekannte Werte werden zu null. AniList kennt mehr Formate als die App (z. B. MANGA bei Relationen). */
+export const MediaFormatOrNullSchema = MediaFormatSchema.nullable().catch(null)
+export const MediaSeasonOrNullSchema = MediaSeasonSchema.nullable().catch(null)
+
+export const AnimeTitleSchema = z.object({
+  romaji: z.string(),
+  english: z.string().nullable(),
+  native: z.string(),
+})
+export type AnimeTitle = z.infer<typeof AnimeTitleSchema>
+
+export const AnimeSchema = z.object({
+  id: z.number(),
+  title: AnimeTitleSchema,
+  coverImage: z.string(),
+  bannerImage: z.string().nullable(),
+  format: MediaFormatSchema.nullable(),
+  episodes: z.number().nullable(),
+  duration: z.number().nullable(),
+  seasonYear: z.number().nullable(),
+  season: MediaSeasonSchema.nullable(),
+  genres: z.array(z.string()),
+  averageScore: z.number().nullable(),
+  popularity: z.number().nullable(),
+  status: z.string().nullable(),
+  studios: z.array(z.string()),
+  description: z.string().nullable(),
+})
+export type Anime = z.infer<typeof AnimeSchema>
+
+export const AnimeDetailSchema = AnimeSchema.extend({
+  relations: z.array(AnimeSchema),
+})
+export type AnimeDetail = z.infer<typeof AnimeDetailSchema>

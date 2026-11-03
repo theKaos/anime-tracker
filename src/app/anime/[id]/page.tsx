@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import * as z from 'zod'
 import { fetchAnimeById } from '@/lib/anilist/client'
 import { AniListError } from '@/lib/anilist/errors'
 import { AnimeDetailHeader } from '@/components/anime/AnimeDetailHeader'
@@ -8,14 +9,16 @@ import { AnimeDescription } from '@/components/anime/AnimeDescription'
 import { RelatedAnime } from '@/components/anime/RelatedAnime'
 import { WatchlistButton } from '@/components/watchlist/WatchlistButton'
 
+const AnimeIdParamSchema = z.coerce.number().int().positive()
+
 export default async function AnimeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const animeId = Number(id)
-  if (Number.isNaN(animeId)) notFound()
+  const animeId = AnimeIdParamSchema.safeParse(id)
+  if (!animeId.success) notFound()
 
   let anime
   try {
-    anime = await fetchAnimeById(animeId)
+    anime = await fetchAnimeById(animeId.data)
   } catch (error) {
     if (error instanceof AniListError && error.status === 404) notFound()
     throw error

@@ -1,65 +1,23 @@
-import type { WatchStatus, WatchlistEntry } from '@/types/watchlist'
+import * as z from 'zod'
+import { parseEntries } from '@/lib/watchlist/parseEntries'
+import { IsoDateSchema } from '@/types/watchlist'
 import type { ParseResult, WatchlistFile } from '@/types/sync'
 import { APP_ID, SCHEMA_VERSION, migrate } from './fileFormat'
 
-const STATUSES: readonly WatchStatus[] = [
-  'PLANNING',
-  'WATCHING',
-  'COMPLETED',
-  'PAUSED',
-  'DROPPED',
-]
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function isIsoDate(value: unknown): value is string {
-  return typeof value === 'string' && !Number.isNaN(Date.parse(value))
-}
-
-function parseEntry(value: unknown): WatchlistEntry | null {
-  if (!isRecord(value)) return null
-  const { animeId, status, progress, totalEpisodes, addedAt, updatedAt, deletedAt, snapshot } = value
-
-  if (typeof animeId !== 'number' || !Number.isFinite(animeId)) return null
-  if (typeof status !== 'string' || !STATUSES.includes(status as WatchStatus)) return null
-  if (typeof progress !== 'number' || !Number.isFinite(progress) || progress < 0) return null
-  if (totalEpisodes !== null && typeof totalEpisodes !== 'number') return null
-  if (!isIsoDate(updatedAt)) return null
-  if (deletedAt !== null && deletedAt !== undefined && !isIsoDate(deletedAt)) return null
-  if (!isRecord(snapshot) || !isRecord(snapshot.title)) return null
-  if (typeof snapshot.title.romaji !== 'string') return null
-  if (typeof snapshot.coverImage !== 'string') return null
-
-  return {
-    animeId,
-    status: status as WatchStatus,
-    progress,
-    totalEpisodes: typeof totalEpisodes === 'number' ? totalEpisodes : null,
-    addedAt: isIsoDate(addedAt) ? addedAt : updatedAt,
-    updatedAt,
-    deletedAt: isIsoDate(deletedAt) ? deletedAt : null,
-    snapshot: {
-      title: {
-        romaji: snapshot.title.romaji,
-        english: typeof snapshot.title.english === 'string' ? snapshot.title.english : null,
-        native: typeof snapshot.title.native === 'string' ? snapshot.title.native : '',
-      },
-      coverImage: snapshot.coverImage,
-      format: (snapshot.format ?? null) as WatchlistEntry['snapshot']['format'],
-    },
-  }
-}
+const FileObjectSchema = z.looseObject({})
+const VersionSchema = z.number().min(1)
+const EntryListSchema = z.array(z.unknown())
+const ExportedAtSchema = IsoDateSchema.catch(() => new Date(0).toISOString())
 
 /**
  * Prüft eine fremde Datei zur Laufzeit. Rückgabe ist bewusst ein Ergebnis-Objekt
  * statt einer Exception: Jeder Fehlerfall braucht in der UI eine eigene Erklärung.
+ * Deshalb auch Schritt für Schritt statt eines einzigen Schemas für die ganze Datei.
  */
 export function parseWatchlistFile(text: string): ParseResult {
   // Ein UTF-8-BOM lässt JSON.parse scheitern, obwohl der Inhalt gültig ist.
   // Windows-Editoren schreiben ihn gern mit.
-  const content = text.replace(/^﻿/, '').trim()
+  const content = text.replace(/^\uFEFF/, '').trim()
 
   if (content === '') {
     return {
@@ -78,14 +36,15 @@ export function parseWatchlistFile(text: string): ParseResult {
     }
   }
 
-  if (!isRecord(raw)) {
+  const object = FileObjectSchema.safeParse(raw)
+  if (!object.success) {
     return {
       ok: false,
       error: { code: 'not-an-object', message: 'Die Datei hat nicht den erwarteten Aufbau.' },
     }
   }
 
-  if (raw.app !== APP_ID) {
+  if (object.data.app !== APP_ID) {
     return {
       ok: false,
       error: {
@@ -95,14 +54,14 @@ export function parseWatchlistFile(text: string): ParseResult {
     }
   }
 
-  const version = raw.schemaVersion
-  if (typeof version !== 'number' || version < 1) {
+  const version = VersionSchema.safeParse(object.data.schemaVersion)
+  if (!version.success) {
     return {
       ok: false,
       error: { code: 'unsupported-version', message: 'Die Versionsangabe der Datei fehlt.' },
     }
   }
-  if (version > SCHEMA_VERSION) {
+  if (version.data > SCHEMA_VERSION) {
     return {
       ok: false,
       error: {
@@ -113,20 +72,19 @@ export function parseWatchlistFile(text: string): ParseResult {
     }
   }
 
-  if (!Array.isArray(raw.entries)) {
+  const entries = EntryListSchema.safeParse(object.data.entries)
+  if (!entries.success) {
     return {
       ok: false,
       error: { code: 'invalid-entries', message: 'Die Datei enthält keine Einträge.' },
     }
   }
 
-  const entries = raw.entries.map(parseEntry).filter((entry): entry is WatchlistEntry => entry !== null)
-
   const file: WatchlistFile = {
-    schemaVersion: version,
-    exportedAt: isIsoDate(raw.exportedAt) ? raw.exportedAt : new Date(0).toISOString(),
+    schemaVersion: version.data,
+    exportedAt: ExportedAtSchema.parse(object.data.exportedAt),
     app: APP_ID,
-    entries,
+    entries: parseEntries(entries.data),
   }
 
   return { ok: true, file: migrate(file) }

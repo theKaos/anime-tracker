@@ -1,19 +1,9 @@
 import type { WatchlistEntry } from '@/types/watchlist'
 import { STORAGE_KEY } from '@/constants/config'
+import { parseEntries } from './parseEntries'
 
-/**
- * Einträge aus einer älteren Version haben kein `deletedAt`. Sie hier zu ergänzen ist
- * billiger, als überall im Code auf `undefined` zu prüfen — und verhindert, dass eine
- * bestehende Watchlist beim Update verloren geht.
- */
 function normalize(value: unknown): WatchlistEntry[] {
-  if (!Array.isArray(value)) return []
-  return value
-    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
-    .map((entry) => ({
-      ...(entry as unknown as WatchlistEntry),
-      deletedAt: typeof entry.deletedAt === 'string' ? entry.deletedAt : null,
-    }))
+  return Array.isArray(value) ? parseEntries(value) : []
 }
 
 export function loadWatchlist(): WatchlistEntry[] {

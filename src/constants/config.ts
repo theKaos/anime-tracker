@@ -14,7 +14,7 @@ export const DEBOUNCE_MS = 400
  * vor öffentlichen APIs werfen solche Anfragen pauschal raus — im Browser wird der
  * Header ohnehin ignoriert, er kostet also nichts.
  */
-export const ANILIST_USER_AGENT = 'anime-tracker (https://github.com/kaosmajor/anime-tracker)'
+export const ANILIST_USER_AGENT = 'anime-tracker (https://github.com/theKaos/anime-tracker)'
 
 /** Nach dieser Zeit gilt AniList als nicht erreichbar, statt die Seite hängen zu lassen. */
 export const ANILIST_TIMEOUT_MS = 10_000

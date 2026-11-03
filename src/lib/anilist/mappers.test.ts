@@ -49,6 +49,21 @@ describe('mapMediaToAnime', () => {
     const media = { ...baseMedia, format: null, season: null } as unknown as AniListMedia
     expect(mapMediaToAnime(media)).toMatchObject({ format: null, season: null })
   })
+
+  it('maps a format the app does not know to null', () => {
+    // Relationen sind nicht auf type: ANIME gefiltert und liefern z. B. MANGA.
+    expect(mapMediaToAnime({ ...baseMedia, format: 'MANGA' }).format).toBeNull()
+  })
+
+  it('fills missing title parts with the next best value', () => {
+    const media = { ...baseMedia, title: { romaji: null, english: null, native: 'テスト' } }
+    expect(mapMediaToAnime(media).title).toEqual({ romaji: 'テスト', english: null, native: 'テスト' })
+  })
+
+  it('maps a completely untitled media to empty strings', () => {
+    const media = { ...baseMedia, title: { romaji: null, english: null, native: null } }
+    expect(mapMediaToAnime(media).title).toEqual({ romaji: '', english: null, native: '' })
+  })
 })
 
 describe('mapMediaToAnimeDetail', () => {

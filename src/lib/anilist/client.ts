@@ -1,6 +1,7 @@
+import * as z from 'zod'
 import type { Anime, AnimeDetail } from '@/types/anime'
 import type { SearchFilters } from '@/types/filters'
-import type { AniListMediaResponse, AniListPageResponse } from '@/types/anilist'
+import { AniListMediaResponseSchema, AniListPageResponseSchema } from '@/types/anilist'
 import {
   ANILIST_API_URL,
   ANILIST_REVALIDATE_SECONDS,
@@ -12,10 +13,10 @@ import { mapMediaToAnime, mapMediaToAnimeDetail } from './mappers'
 import { ANIME_BY_ID_QUERY, SEARCH_ANIME_QUERY } from './queries'
 import { AniListError } from './errors'
 
-interface GraphQLResponse<T> {
-  data?: T
-  errors?: Array<{ message?: string }>
-}
+const GraphQLResponseSchema = z.object({
+  data: z.unknown().optional(),
+  errors: z.array(z.object({ message: z.string().optional() })).optional(),
+})
 
 /** Status 0 heißt: Es kam gar keine HTTP-Antwort zurück. */
 const NO_RESPONSE = 0
@@ -46,7 +47,20 @@ function describeNetworkFailure(error: unknown): AniListError {
   return new AniListError(`AniList ist nicht erreichbar: ${reason}`, NO_RESPONSE)
 }
 
-async function graphqlRequest<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+function describeUnexpectedData(error: z.ZodError, status: number, body: string): AniListError {
+  const [issue] = error.issues
+  return new AniListError(
+    `AniList hat unerwartete Daten geliefert (${issue.path.join('.')}: ${issue.message}).`,
+    status,
+    snippet(body)
+  )
+}
+
+async function graphqlRequest<T>(
+  query: string,
+  variables: Record<string, unknown>,
+  schema: z.ZodType<T>
+): Promise<T> {
   let response: Response
   try {
     response = await fetch(ANILIST_API_URL, {
@@ -69,9 +83,9 @@ async function graphqlRequest<T>(query: string, variables: Record<string, unknow
   // SyntaxError abbrechen — ohne Status, ohne Hinweis, was eigentlich kam.
   const body = await response.text()
 
-  let json: GraphQLResponse<T>
+  let raw: unknown
   try {
-    json = JSON.parse(body) as GraphQLResponse<T>
+    raw = JSON.parse(body)
   } catch {
     throw new AniListError(
       `AniList hat kein JSON geliefert (HTTP ${response.status}). Vermutlich blockiert die API diese Anfrage.`,
@@ -79,6 +93,10 @@ async function graphqlRequest<T>(query: string, variables: Record<string, unknow
       snippet(body)
     )
   }
+
+  const parsed = GraphQLResponseSchema.safeParse(raw)
+  if (!parsed.success) throw describeUnexpectedData(parsed.error, response.status, body)
+  const json = parsed.data
 
   if (!response.ok || json.errors) {
     const message = json.errors?.[0]?.message ?? `AniList-Anfrage fehlgeschlagen (HTTP ${response.status})`
@@ -89,22 +107,29 @@ async function graphqlRequest<T>(query: string, variables: Record<string, unknow
     throw new AniListError('AniList hat eine leere Antwort geliefert.', response.status, snippet(body))
   }
 
-  return json.data
+  const data = schema.safeParse(json.data)
+  if (!data.success) throw describeUnexpectedData(data.error, response.status, body)
+
+  return data.data
 }
 
 export async function fetchAnimeList(
   filters: SearchFilters
 ): Promise<{ anime: Anime[]; hasNextPage: boolean }> {
-  const data = await graphqlRequest<AniListPageResponse>(SEARCH_ANIME_QUERY, {
-    page: filters.page,
-    perPage: PAGE_SIZE,
-    search: filters.search || undefined,
-    seasonYear: filters.year ?? undefined,
-    season: filters.season ?? undefined,
-    format: filters.format ?? undefined,
-    genres: filters.genres.length ? filters.genres : undefined,
-    sort: [filters.sort],
-  })
+  const data = await graphqlRequest(
+    SEARCH_ANIME_QUERY,
+    {
+      page: filters.page,
+      perPage: PAGE_SIZE,
+      search: filters.search || undefined,
+      seasonYear: filters.year ?? undefined,
+      season: filters.season ?? undefined,
+      format: filters.format ?? undefined,
+      genres: filters.genres.length ? filters.genres : undefined,
+      sort: [filters.sort],
+    },
+    AniListPageResponseSchema
+  )
 
   return {
     anime: data.Page.media.map(mapMediaToAnime),
@@ -113,6 +138,6 @@ export async function fetchAnimeList(
 }
 
 export async function fetchAnimeById(id: number): Promise<AnimeDetail> {
-  const data = await graphqlRequest<AniListMediaResponse>(ANIME_BY_ID_QUERY, { id })
+  const data = await graphqlRequest(ANIME_BY_ID_QUERY, { id }, AniListMediaResponseSchema)
   return mapMediaToAnimeDetail(data.Media)
 }

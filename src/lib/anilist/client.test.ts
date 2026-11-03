@@ -97,6 +97,36 @@ describe('graphqlRequest — der Produktionsfehler vom 08.09.', () => {
   })
 })
 
+describe('graphqlRequest — Laufzeitprüfung der Antwort', () => {
+  it('rejects data that does not match the schema and names the field', async () => {
+    server.use(
+      http.post(ANILIST_API_URL, () =>
+        HttpResponse.json({
+          data: { Page: { pageInfo: { hasNextPage: 'vielleicht' }, media: [] } },
+        })
+      )
+    )
+
+    const error = (await fetchAnimeList(DEFAULT_FILTERS).catch((err) => err)) as AniListError
+    expect(error).toBeInstanceOf(AniListError)
+    expect(error.status).toBe(200)
+    expect(error.message).toContain('Page.pageInfo.hasNextPage')
+    expect(error.bodySnippet).toContain('vielleicht')
+  })
+
+  it('rejects a missing media instead of crashing in the mapper', async () => {
+    server.use(http.post(ANILIST_API_URL, () => HttpResponse.json({ data: { Media: null } })))
+
+    await expect(fetchAnimeById(1)).rejects.toBeInstanceOf(AniListError)
+  })
+
+  it('rejects JSON that is not a GraphQL response', async () => {
+    server.use(http.post(ANILIST_API_URL, () => HttpResponse.json([1, 2, 3])))
+
+    await expect(fetchAnimeList(DEFAULT_FILTERS)).rejects.toBeInstanceOf(AniListError)
+  })
+})
+
 describe('fetchAnimeList — Filter landen als GraphQL-Variablen', () => {
   function captureVariables() {
     const seen: { variables?: Record<string, unknown> } = {}

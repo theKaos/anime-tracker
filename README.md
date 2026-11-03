@@ -37,6 +37,7 @@ Eine Web-App zum Suchen von Anime, Verwalten einer persönlichen Watchlist und T
 | Styling       | Tailwind CSS v4                                         |
 | State         | Zustand                                                 |
 | Daten         | AniList GraphQL API                                     |
+| Validierung   | Zod 4                                                   |
 | Unit-Tests    | Vitest, Testing Library, MSW, jsdom                     |
 | E2E-Tests     | Playwright, axe-core                                    |
 | Code-Qualität | ESLint, Prettier, `tsc --noEmit`                        |
@@ -130,7 +131,7 @@ src/
 ├── lib/          # AniList-Client, Watchlist-Logik, Datei-Sync, Utils
 ├── store/        # Zustand-Stores
 ├── test/         # Test-Mocks und -Helfer
-└── types/        # Gemeinsame TypeScript-Typen
+└── types/        # Zod-Schemas und daraus abgeleitete TypeScript-Typen
 e2e/              # Playwright-Tests und AniList-Mock-Server
 ```
 
@@ -145,6 +146,25 @@ Die App hat kein Backend und braucht keinen Account.
 - Der Datei-Sync nutzt die File System Access API. Die gibt es derzeit nur in Chromium-Browsern. In anderen Browsern bleiben Import und Export per Datei möglich.
 
 Mehr zum Konzept steht in [PERSISTENZ-PLAN.md](PERSISTENZ-PLAN.md).
+
+### Laufzeitvalidierung
+
+Die Datentypen in `src/types/` werden als [Zod](https://zod.dev/)-Schemas definiert, die TypeScript-Typen daraus abgeleitet. Schema und Typ können so nicht auseinanderlaufen:
+
+```ts
+export const WatchStatusSchema = z.enum(['PLANNING', 'WATCHING', 'COMPLETED', 'PAUSED', 'DROPPED'])
+export type WatchStatus = z.infer<typeof WatchStatusSchema>
+```
+
+Daten von außen werden beim Einlesen geprüft. Was bei ungültigen Daten passiert, hängt von der Quelle ab:
+
+| Quelle            | Bei ungültigen Daten                                                               |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| AniList-Antwort   | `AniListError` mit Feldname und Fehlermeldung                                      |
+| Datei-Import      | Fehler am Dateikopf brechen den Import ab, kaputte Einträge werden verworfen       |
+| `localStorage`    | Kaputte Einträge werden verworfen, fehlende optionale Felder ergänzt               |
+| URL-Filter        | Der betroffene Filter fällt auf seinen Standardwert zurück                         |
+| Route `/anime/id` | Die Seite antwortet mit 404, ohne AniList anzufragen                               |
 
 ## CI
 

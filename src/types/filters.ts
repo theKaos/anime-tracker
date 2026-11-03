@@ -1,13 +1,21 @@
-import type { MediaFormat, MediaSeason } from './anime'
+import * as z from 'zod'
+import { MediaFormatSchema, MediaSeasonSchema } from './anime'
 
-export type SortOption = 'TRENDING_DESC' | 'POPULARITY_DESC' | 'SCORE_DESC' | 'START_DATE_DESC'
+export const SortOptionSchema = z.enum([
+  'TRENDING_DESC',
+  'POPULARITY_DESC',
+  'SCORE_DESC',
+  'START_DATE_DESC',
+])
+export type SortOption = z.infer<typeof SortOptionSchema>
 
-export interface SearchFilters {
-  search: string
-  year: number | null
-  season: MediaSeason | null
-  format: MediaFormat | null
-  genres: string[]
-  sort: SortOption
-  page: number
-}
+export const SearchFiltersSchema = z.object({
+  search: z.string(),
+  year: z.number().nullable(),
+  season: MediaSeasonSchema.nullable(),
+  format: MediaFormatSchema.nullable(),
+  genres: z.array(z.string()),
+  sort: SortOptionSchema,
+  page: z.number(),
+})
+export type SearchFilters = z.infer<typeof SearchFiltersSchema>
