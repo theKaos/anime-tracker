@@ -27,12 +27,15 @@ describe('AnimeDetailPage', () => {
     expect(screen.getByRole('button', { name: 'hinzufügen' })).toBeInTheDocument()
   })
 
-  it('answers a non-numeric id with 404 without asking AniList', async () => {
-    const spy = vi.spyOn(anilistClient, 'fetchAnimeById')
+  it.each(['abc', '1.5', '-1', '0'])(
+    'answers the invalid id %s with 404 without asking AniList',
+    async (id) => {
+      const spy = vi.spyOn(anilistClient, 'fetchAnimeById')
 
-    await expect(page('abc')).rejects.toBe(NOT_FOUND)
-    expect(spy).not.toHaveBeenCalled()
-  })
+      await expect(page(id)).rejects.toBe(NOT_FOUND)
+      expect(spy).not.toHaveBeenCalled()
+    }
+  )
 
   it('maps an AniList 404 to the not-found page', async () => {
     vi.spyOn(anilistClient, 'fetchAnimeById').mockRejectedValueOnce(new AniListError('weg', 404))

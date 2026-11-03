@@ -1,21 +1,26 @@
-import type { Anime, AnimeDetail, MediaFormat, MediaSeason } from '@/types/anime'
+import {
+  MediaFormatOrNullSchema,
+  MediaSeasonOrNullSchema,
+  type Anime,
+  type AnimeDetail,
+} from '@/types/anime'
 import type { AniListMedia } from '@/types/anilist'
 
 export function mapMediaToAnime(media: AniListMedia): Anime {
   return {
     id: media.id,
     title: {
-      romaji: media.title.romaji,
+      romaji: media.title.romaji ?? media.title.native ?? '',
       english: media.title.english,
-      native: media.title.native,
+      native: media.title.native ?? '',
     },
     coverImage: media.coverImage.large ?? '/placeholder-cover.svg',
     bannerImage: media.bannerImage,
-    format: (media.format as MediaFormat) ?? null,
+    format: MediaFormatOrNullSchema.parse(media.format),
     episodes: media.episodes,
     duration: media.duration,
     seasonYear: media.seasonYear,
-    season: (media.season as MediaSeason) ?? null,
+    season: MediaSeasonOrNullSchema.parse(media.season),
     genres: media.genres,
     averageScore: media.averageScore,
     popularity: media.popularity,

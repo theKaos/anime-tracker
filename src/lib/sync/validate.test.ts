@@ -91,7 +91,7 @@ describe('parseWatchlistFile — Sonderfälle aus dem echten Betrieb', () => {
 
   it('survives a UTF-8 byte order mark', () => {
     // Windows-Editoren schreiben JSON gern mit BOM; JSON.parse wirft darüber.
-    const result = parseWatchlistFile('﻿' + toJson([entry]))
+    const result = parseWatchlistFile('\uFEFF' + toJson([entry]))
 
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.file.entries).toEqual([entry])
@@ -126,6 +126,12 @@ describe('parseWatchlistFile — einzelne Einträge', () => {
     ['Cover fehlt', { ...entry, snapshot: { ...snapshot, coverImage: null } }],
   ])('drops an entry when %s', (_, broken) => {
     expect(parseEntries([broken, entry])).toEqual([entry])
+  })
+
+  it('maps an unknown format to null but keeps the entry', () => {
+    const [parsed] = parseEntries([{ ...entry, snapshot: { ...snapshot, format: 'MANGA' } }])
+
+    expect(parsed.snapshot.format).toBeNull()
   })
 
   it('accepts an unknown episode count', () => {

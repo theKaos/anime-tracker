@@ -4,6 +4,9 @@ import { applyImport } from './applyImport'
 import { toJson } from './serialize'
 import { makeEntry } from '@/test/utils/watchlistFactory'
 
+/** Feste Uhr: Mit der echten laufen die Grabsteine der Tests irgendwann ab. */
+const NOW = new Date('2026-08-03T00:00:00.000Z')
+
 /**
  * Bildet den eigentlichen Zweck des Features nach: Zwei Geräte tauschen eine Datei aus
  * und müssen danach denselben Zustand haben. Der Zustand-Store ist ein Singleton und
@@ -11,7 +14,7 @@ import { makeEntry } from '@/test/utils/watchlistFactory'
  * getestet, durch die auch die UI läuft.
  */
 function importInto(device: WatchlistEntry[], file: string): WatchlistEntry[] {
-  const outcome = applyImport(device, file)
+  const outcome = applyImport(device, file, NOW)
   if (!outcome.ok) throw new Error(outcome.error.message)
   return outcome.result.entries
 }

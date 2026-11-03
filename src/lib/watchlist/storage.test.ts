@@ -45,6 +45,13 @@ describe('storage — fremde Daten', () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([null, 42, 'x', entry]))
     expect(loadWatchlist()).toEqual([entry])
   })
+
+  it('drops objects that do not have the shape of an entry', () => {
+    const broken = [{ animeId: 'eins' }, { ...entry, status: 'REWATCHING' }, entry]
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(broken))
+
+    expect(loadWatchlist()).toEqual([entry])
+  })
 })
 
 describe('storage — auf dem Server', () => {

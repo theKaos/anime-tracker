@@ -4,6 +4,7 @@ out/
 .env*.local
 *.log
 coverage/
+tsconfig.tsbuildinfo
 .DS_Store
 .superpowers/
 .claude/

@@ -41,6 +41,10 @@ describe('parseSearchParams', () => {
     const params = new URLSearchParams('sort=BOGUS')
     expect(parseSearchParams(params).sort).toBe(DEFAULT_FILTERS.sort)
   })
+
+  it.each(['abc', '-2022', '20.5'])('falls back to null for the invalid year %s', (year) => {
+    expect(parseSearchParams(new URLSearchParams({ year })).year).toBeNull()
+  })
 })
 
 describe('parseSearchParamsFromRecord', () => {
